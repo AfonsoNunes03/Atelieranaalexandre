@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://mcp.figma.com; connect-src 'self' https://mcp.figma.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mcp.figma.com;">>
+    <title>Galeria | Ana Alexandre</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=3">
+    <link rel="stylesheet" href="css/premium.css?v=7">
+    <meta name="description"
+        content="Galeria online de Ana Alexandre. Explore o acervo de pintura contemporânea, desenhos e obras de investimento.">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://anaalexandre.pt/galeria.html">
+    <meta property="og:title" content="Galeria de Arte | Ana Alexandre">
+    <meta property="og:description" content="Acervo de pintura contemporânea e séries de investigação.">
+    <meta property="og:image" content="https://anaalexandre.pt/assets/novo_01.png">
+</head>
+
+<body>
+
+    <header id="main-header">
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo" aria-label="Ana Alexandre - Página Inicial">
+                    Ana Alexandre <span class="logo-subtitle">| Atelier</span>
+                </a>
+
+                <ul class="nav-links">
+                    <li><a href="index.html" data-i18n="shop">Montra</a></li>
+                    <li><a href="galeria.html" class="active" data-i18n="gallery">Galeria</a></li>
+                    <li><a href="sobre.html" data-i18n="about">Sobre</a></li>
+                    <li><a href="mentoria.html" data-i18n="classes">Mentoria</a></li>
+                    <li><a href="contactos.html" data-i18n="contacts">Contactos</a></li>
+                </ul>
+
+                                <div class="header-actions">
+                    <div class="lang-dropdown">
+                        <button class="lang-dropdown-btn" aria-label="Select Language">
+                            <img class="current-flag-img" src="assets/flags/pt.svg" alt="PT" width="24" height="18">
+                            <span class="current-lang-text">PT</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="lang-dropdown-content amazon-style">
+                            <div class="lang-dropdown-arrow"></div>
+                            <div class="lang-dropdown-header">Mudar idioma</div>
+                            <div class="lang-options-list">
+                                <button class="lang-option-btn" data-lang="pt" data-flag="assets/flags/pt.svg"><span class="radio-circle"></span><img src="assets/flags/pt.svg" alt="PT" width="22" class="option-flag"><span class="lang-name">português - PT</span></button>
+                                <button class="lang-option-btn" data-lang="es" data-flag="assets/flags/es.svg"><span class="radio-circle"></span><img src="assets/flags/es.svg" alt="ES" width="22" class="option-flag"><span class="lang-name">español - ES</span></button>
+                                <button class="lang-option-btn" data-lang="en" data-flag="assets/flags/gb.svg"><span class="radio-circle"></span><img src="assets/flags/gb.svg" alt="EN" width="22" class="option-flag"><span class="lang-name">English - EN</span></button>
+                                <button class="lang-option-btn" data-lang="fr" data-flag="assets/flags/fr.svg"><span class="radio-circle"></span><img src="assets/flags/fr.svg" alt="FR" width="22" class="option-flag"><span class="lang-name">français - FR</span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="carrinho.html" class="nav-cart-btn" aria-label="Ver Carrinho">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        <span class="cart-count">0</span>
+                    </a>
+
+                    <!-- Mobile Menu Toggle -->
+                    <button class="mobile-toggle" aria-label="Menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div></nav>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="mobile-menu-overlay">
+        <ul class="mobile-nav-links">
+            <li><a href="index.html" data-i18n="shop">Montra</a></li>
+            <li><a href="galeria.html" data-i18n="gallery">Galeria</a></li>
+            <li><a href="sobre.html" data-i18n="about">Sobre</a></li>
+            <li><a href="mentoria.html" data-i18n="classes">Mentoria</a></li>
+            <li><a href="contactos.html" data-i18n="contacts">Contactos</a></li>
+        </ul>
+                <div class="mobile-lang-panel">
+            <p class="mobile-lang-panel-title">Idioma / Language</p>
+            <div class="mobile-lang-options">
+                <button class="mobile-lang-opt" data-lang="pt">
+                    <img src="assets/flags/pt.svg" alt="Portugal" width="24" height="18">
+                    PT
+                </button>
+                <button class="mobile-lang-opt" data-lang="es">
+                    <img src="assets/flags/es.svg" alt="España" width="24" height="18">
+                    ES
+                </button>
+                <button class="mobile-lang-opt" data-lang="en">
+                    <img src="assets/flags/gb.svg" alt="English" width="24" height="18">
+                    EN
+                </button>
+                <button class="mobile-lang-opt" data-lang="fr">
+                    <img src="assets/flags/fr.svg" alt="Français" width="24" height="18">
+                    FR
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Main Gallery Structure -->
+    <div class="container gallery-layout"
+        style="display: grid; grid-template-columns: 250px 1fr; gap: 40px; margin-top: 40px; margin-bottom: 60px;">
+
+        <!-- Sidebar Filters -->
+        <aside class="filters">
+            <h3 style="font-family: var(--font-family-heading); margin-bottom: 20px; font-size: 1.2rem;">Categorias</h3>
+            <div class="filter-group">
+                <ul class="filter-list" style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 10px;"><a href="#" data-category="all" class="active"
+                            style="text-decoration: none; color: var(--color-text-main);">Todas as Obras</a></li>
+                    <li style="margin-bottom: 10px;"><a href="#" data-category="acervo"
+                            style="text-decoration: none; color: var(--color-text-main);">Acervo & Obras Capitais</a>
+                    </li>
+                    <li style="margin-bottom: 10px;"><a href="#" data-category="series"
+                            style="text-decoration: none; color: var(--color-text-main);">Séries de Investigação</a>
+                    </li>
+                    <li style="margin-bottom: 10px;"><a href="#" data-category="drawing"
+                            style="text-decoration: none; color: var(--color-text-main);">Gabinete de Desenho</a></li>
+                </ul>
+            </div>
+
+            <h3
+                style="font-family: var(--font-family-heading); margin-bottom: 20px; font-size: 1.2rem; margin-top: 30px;">
+                Preço</h3>
+            <div class="filter-group">
+                <ul class="filter-list" style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 10px;"><a href="#" data-price="all" class="active"
+                            style="text-decoration: none; color: var(--color-text-main);">Qualquer Preço</a></li>
+                    <li style="margin-bottom: 10px;"><a href="#" data-price="under500"
+                            style="text-decoration: none; color: var(--color-text-main);">Até €500</a></li>
+                    <li style="margin-bottom: 10px;"><a href="#" data-price="500-1000"
+                            style="text-decoration: none; color: var(--color-text-main);">€500 - €1000</a></li>
+                    <li style="margin-bottom: 10px;"><a href="#" data-price="above1000"
+                            style="text-decoration: none; color: var(--color-text-main);">Acima de €1000</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Product Grid -->
+        <main>
+            <div class="gallery-toolbar"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1 class="section-title" style="margin: 0; text-align: left;">Acervo Disponível</h1>
+                <span id="results-count" style="color: #777; font-size: 0.9rem;">A carregar...</span>
+            </div>
+
+            <div id="gallery-grid" class="grid-3">
+                <!-- JS Content Injected Here -->
+                <div class="loading-spinner">Carregando coleção...</div>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4 data-i18n="footer_nav">Navegação</h4>
+                    <ul>
+                        <li><a href="index.html" data-i18n="shop" data-i18n="home">Início</a></li>
+                        <li><a href="galeria.html" data-i18n="gallery">Galeria</a></li>
+                        <li><a href="sobre.html" data-i18n="about">Sobre</a></li>
+                        <li><a href="mentoria.html" data-i18n="classes">Aulas & Workshops</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_support">Apoio ao Cliente</h4>
+                    <ul>
+                        <li><a href="#" data-i18n="shipping">Envios e Devoluções</a></li>
+                        <li><a href="#" data-i18n="terms">Termos e Condições</a></li>
+                    </ul>
+                    <div class="payment-badges" style="flex-direction: column; gap: 5px; margin-top: 10px;">
+                        <span class="badge">CTT Expresso</span>
+                        <span class="badge">Devolução 14 Dias</span>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_contacts">Contactos</h4>
+                    <ul>
+                        <li>amargaridajalexandre@gmail.com</li>
+                        <li>+351 967 060 682</li>
+                    </ul>
+                    <div class="payment-badges" style="margin-top: 15px;">
+                        <span class="badge">MB WAY</span>
+                        <span class="badge">Visa</span>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_newsletter_title">Newsletter</h4>
+                    <p style="font-size: 0.9rem; margin-bottom: 10px; color: #555;" data-i18n="newsletter_text">Ganhe
+                        10% de desconto na 1ª aula ou no 1º quadro. Junte-se à lista VIP.</p>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="O seu email" data-i18n="placeholder_email">
+                        <button type="submit">&rarr;</button>
+                    </form>
+                </div>
+            </div>
+            <div class="copyright">
+                &copy; 2024 Ana Alexandre.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Botão WhatsApp Flutuante -->
+    <a href="https://wa.me/351967060682" class="whatsapp-float" target="_blank" aria-label="Falar no WhatsApp">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path
+                d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.996 4.307 4.741-1.638z" />
+            <path
+                d="M16.573 14.392c-.251-.127-1.485-.734-1.715-.817-.229-.083-.396-.123-.562.126-.168.249-.646.816-.791.983-.146.167-.291.19-.542.062-.25-.127-1.055-.389-2.009-1.238-.737-.656-1.235-1.467-1.379-1.716-.146-.249-.015-.384.11-.508.113-.112.25-.291.375-.437.125-.146.167-.249.25-.416.084-.167.042-.313-.021-.437-.062-.125-.562-1.354-.77-1.854-.202-.486-.407-.421-.563-.428-.146-.007-.312-.007-.478-.007-.168 0-.438.063-.667.313-.229.25-1.056.885-1.485 2.149 0 0 .195.428.234 1.144.072 1.341 1.767 4.197 4.439 5.253.636.251 1.132.401 1.516.523.637.202 1.216.173 1.671.106.51-.076 1.486-.607 1.696-1.193.21-.585.21-1.085.147-1.193-.063-.108-.23-.173-.481-.299z" />
+        </svg>
+    </a>
+
+    <script src="js/cart.js"></script>
+    <script src="js/products_data.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/main.js?v=8"></script>
+</body>
+
+</html>

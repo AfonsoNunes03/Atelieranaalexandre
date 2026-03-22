@@ -1,0 +1,50 @@
+You are an expert UI/UX designer and front-end developer specializing in clean, minimal design systems. I need you to build a fully functional artwork filter sidebar component with top bar controls, using only HTML, CSS, and vanilla JavaScript (no external libraries or frameworks).
+
+**Design System:** Strictly black, white, and subtle grays for all UI elements. The only color in the entire interface comes from the "Dominant Color" swatches. Typography and spacing should feel editorial and refined.
+
+---
+
+## Top Bar Controls
+
+Render above the sidebar or inline with the content area header:
+- A button with a settings/sliders icon labeled **"Hide Filters"** that toggles sidebar visibility
+- A **"Sort By"** dropdown menu positioned next to it
+
+---
+
+## Sidebar Filter Sections
+
+Accordion style, each section separated by a thin 1px gray line, with a chevron icon that rotates on open/close:
+
+1. **Medium / Technique** *(Técnica)* — Vertical list of minimal checkboxes: Oil on Canvas, Acrylic, Watercolor, Mixed Media, Drawing
+2. **Size** *(Tamanho)* — 2×2 grid of pill-shaped toggle buttons: Small, Medium, Large, Oversized — with a visible active/selected state (dark fill, white text)
+3. **Dominant Color** *(Cor Predominante)* — Horizontal row of circular color swatches: Black, White, Navy Blue, Crimson Red, Earth Brown — with a selected state indicator (ring or checkmark)
+4. **Price** *(Preço)* — Dual-handle range slider with two small text input fields below labeled **"Min €"** and **"Max €"** — slider and inputs must stay in sync
+5. **Theme / Collection** *(Tema)* — Vertical list of minimal checkboxes: Abstract, Portrait, Landscape, Figurative
+6. **Availability** — A single iOS-style toggle switch labeled **"Show only available artworks"**
+
+---
+
+## Functional Requirements
+
+- All accordion sections open and close independently via chevron click
+- Pill buttons reflect selected/unselected state visually on click
+- Color swatches show a clear selected state on click
+- Dual-handle range slider is fully interactive with both handles draggable and synced to the input fields
+- "Hide Filters" button smoothly collapses/expands the sidebar
+- All interactions handled in vanilla JS — no jQuery, no frameworks
+
+---
+
+## Mobile Responsive Layout
+
+Implement a **Nike-style mobile experience** inspired by Nike's filter UX patterns:
+
+- On mobile (≤768px), the sidebar does **not** render as a side panel — instead, filters open as a **full-screen overlay or bottom sheet** that slides up from the bottom of the screen
+- The top bar shows a **"Filters" button** (with item count badge when filters are active) and the **"Sort By"** control as two equal-width buttons side by side, spanning the full width
+- Inside the mobile filter overlay: each filter section remains accordion-style, a sticky **"Apply"** button sits at the bottom, and an **"X" close button** sits at the top right
+- Smooth open/close animation for the overlay (slide-up transition)
+- Touch-friendly tap targets throughout (minimum 44px height)
+- The dual-handle range slider must be fully usable on touch/mobile
+
+Deliver the complete implementation as a single self-contained HTML file with embedded CSS and JS.

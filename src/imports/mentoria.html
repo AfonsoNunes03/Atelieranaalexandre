@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://mcp.figma.com; connect-src 'self' https://mcp.figma.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mcp.figma.com;">>
+    <title>Mentoria & Aulas | Ana Alexandre</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/premium.css?v=3">
+    <meta name="description"
+        content="Mentoria Artística e Workshops de Pintura com Ana Alexandre. Aulas de pintura, revisão de portfólio e orientação de carreira artística em Portugal.">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://anaalexandre.pt/mentoria.html">
+    <meta property="og:title" content="Mentoria Artística & Workshops | Ana Alexandre">
+    <meta property="og:description" content="Desenvolva a sua prática artística com acompanhamento profissional.">
+    <meta property="og:image" content="https://anaalexandre.pt/assets/hero_atelier.jpg">
+</head>
+
+<body>
+
+    <header id="main-header">
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo" aria-label="Ana Alexandre - Página Inicial">
+                    Ana Alexandre <span class="logo-subtitle">| Atelier</span>
+                </a>
+
+                <ul class="nav-links">
+                    <li><a href="index.html" data-i18n="shop">Montra</a></li>
+                    <li><a href="galeria.html" data-i18n="gallery">Galeria</a></li>
+                    <li><a href="sobre.html" data-i18n="about">Sobre</a></li>
+                    <li><a href="mentoria.html" class="active" data-i18n="classes">Mentoria</a></li>
+                    <li><a href="contactos.html" data-i18n="contacts">Contactos</a></li>
+                </ul>
+
+                <div class="header-actions">
+                    <div class="lang-dropdown">
+                        <button class="lang-dropdown-btn" aria-label="Select Language">
+                            <img class="current-flag-img" src="assets/flags/pt.svg" alt="PT" width="24" height="18">
+                            <span class="current-lang-text">PT</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="dropdown-chevron">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="lang-dropdown-content amazon-style">
+                            <div class="lang-dropdown-arrow"></div>
+                            <div class="lang-dropdown-header">Mudar idioma</div>
+                            <div class="lang-options-list">
+                                <button class="lang-option-btn" data-lang="pt" data-flag="assets/flags/pt.svg"><span
+                                        class="radio-circle"></span><img src="assets/flags/pt.svg" alt="PT" width="22"
+                                        class="option-flag"><span class="lang-name">português - PT</span></button>
+                                <button class="lang-option-btn" data-lang="es" data-flag="assets/flags/es.svg"><span
+                                        class="radio-circle"></span><img src="assets/flags/es.svg" alt="ES" width="22"
+                                        class="option-flag"><span class="lang-name">español - ES</span></button>
+                                <button class="lang-option-btn" data-lang="en" data-flag="assets/flags/gb.svg"><span
+                                        class="radio-circle"></span><img src="assets/flags/gb.svg" alt="EN" width="22"
+                                        class="option-flag"><span class="lang-name">English - EN</span></button>
+                                <button class="lang-option-btn" data-lang="fr" data-flag="assets/flags/fr.svg"><span
+                                        class="radio-circle"></span><img src="assets/flags/fr.svg" alt="FR" width="22"
+                                        class="option-flag"><span class="lang-name">français - FR</span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="carrinho.html" class="nav-cart-btn" aria-label="Ver Carrinho">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        <span class="cart-count">0</span>
+                    </a>
+
+                    <!-- Mobile Menu Toggle -->
+                    <button class="mobile-toggle" aria-label="Menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="mobile-menu-overlay">
+        <ul class="mobile-nav-links">
+            <li><a href="index.html" data-i18n="shop">Montra</a></li>
+            <li><a href="galeria.html" data-i18n="gallery">Galeria</a></li>
+            <li><a href="sobre.html" data-i18n="about">Sobre</a></li>
+            <li><a href="mentoria.html" data-i18n="classes">Mentoria</a></li>
+            <li><a href="contactos.html" data-i18n="contacts">Contactos</a></li>
+        </ul>
+        <div class="mobile-lang-panel">
+            <p class="mobile-lang-panel-title">Idioma / Language</p>
+            <div class="mobile-lang-options">
+                <button class="mobile-lang-opt" data-lang="pt">
+                    <img src="assets/flags/pt.svg" alt="Portugal" width="24" height="18">
+                    PT
+                </button>
+                <button class="mobile-lang-opt" data-lang="es">
+                    <img src="assets/flags/es.svg" alt="España" width="24" height="18">
+                    ES
+                </button>
+                <button class="mobile-lang-opt" data-lang="en">
+                    <img src="assets/flags/gb.svg" alt="English" width="24" height="18">
+                    EN
+                </button>
+                <button class="mobile-lang-opt" data-lang="fr">
+                    <img src="assets/flags/fr.svg" alt="Français" width="24" height="18">
+                    FR
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <div class="container">
+        <section class="hero"
+            style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.6)), url('assets/hero_atelier.jpg'); height: 50vh; margin-bottom: 60px; display: flex; align-items: center; justify-content: center; text-align: center; background-size: cover; background-position: center;">
+            <div class="hero-content" style="max-width: 800px;">
+                <h1 data-i18n="classes_title"
+                    style="margin-bottom: 10px; color: var(--color-gold); text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 3.5rem;">
+                    Partilhar Conhecimento</h1>
+                <p data-i18n="classes_subtitle"
+                    style="font-size: 1.4rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8); font-weight: 300;">
+                    Mentoria Artística & Workshops Técnicos</p>
+            </div>
+        </section>
+
+        <section class="highlights">
+            <h2 class="section-title" data-i18n="school_title" style="text-align: center;">O Atelier como Escola</h2>
+
+            <!-- Improved Intro Text -->
+            <div style="max-width: 700px; margin: 0 auto 60px; text-align: center;">
+                <span
+                    style="font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.4rem; color: #333; display: block; margin-bottom: 15px;">
+                    "Descubra a sua voz interior através da abstração."
+                </span>
+                <p style="color: #666; font-size: 1.05rem; line-height: 1.7;" data-i18n="school_intro">
+                    A experiência académica e prática de Ana Alexandre (PhD) colocada ao serviço do desenvolvimento de
+                    novos artistas.
+                    Um espaço de aprendizagem técnica e maturação conceptual.
+                </p>
+            </div>
+
+            <!-- New Levels Structure -->
+            <div class="grid-3">
+                <!-- Beginner / General -->
+                <div class="course-card" style="border-top: 4px solid #F4A261; text-align: center;">
+                    <div style="margin-bottom: 20px;">
+                        <span class="course-tag"
+                            style="display: inline-block; background: #FFF3E0; color: #E67E22; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px;">Nível
+                            Iniciante / Intermédio</span>
+                        <h3 data-i18n="class_1_title" style="margin-bottom: 15px;">Aulas de Pintura e Desenho</h3>
+                        <p style="margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6; color: #555;"
+                            data-i18n="class_1_desc">
+                            Aprenda as bases técnicas (cor, composição, materiais) enquanto explora a sua criatividade.
+                            Acompanhamento personalizado, passo a passo, num ambiente inspirador.
+                        </p>
+                    </div>
+                    <a href="contactos.html?subject=Inscrição Aulas Regulares" class="btn-cta"
+                        style="font-size: 0.85rem; padding: 12px 25px; display: inline-block; min-width: 150px;"
+                        data-i18n="btn_schedule">Inscrever</a>
+                </div>
+
+                <!-- Masterclass / Advanced -->
+                <div class="course-card" style="border-top: 4px solid #E76F51; text-align: center;">
+                    <div style="margin-bottom: 20px;">
+                        <span class="course-tag"
+                            style="display: inline-block; background: #FDEBD0; color: #C0392B; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px;">Nível
+                            Avançado</span>
+                        <h3 data-i18n="class_2_title" style="margin-bottom: 15px;">Mentoria Artística (Pro)</h3>
+                        <p style="margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6; color: #555;"
+                            data-i18n="class_2_desc">
+                            Para artistas que querem expor e vender. Análise crítica de portfólio, desbloqueio criativo
+                            e orientação de carreira.
+                            Sessões individuais focadas na profissionalização.
+                        </p>
+                    </div>
+                    <a href="contactos.html?subject=Candidatura Mentoria" class="btn-cta"
+                        style="font-size: 0.85rem; padding: 12px 25px; display: inline-block; min-width: 150px;"
+                        data-i18n="btn_schedule">Candidatar</a>
+                </div>
+
+                <!-- Workshops -->
+                <div class="course-card" style="border-top: 4px solid #2A9D8F; text-align: center;">
+                    <div style="margin-bottom: 20px;">
+                        <span class="course-tag"
+                            style="display: inline-block; background: #E8F8F5; color: #16A085; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px;">Intensivos</span>
+                        <h3 data-i18n="class_3_title" style="margin-bottom: 15px;">Workshops Técnicos</h3>
+                        <p style="margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6; color: #555;"
+                            data-i18n="class_3_desc">
+                            Imersões de fim-de-semana ou dias específicos. Temas como "Preparação de Telas", "Resinas e
+                            Transparências".
+                            Saia com uma nova competência técnica dominada.
+                        </p>
+                    </div>
+                    <a href="contactos.html?subject=Info Workshops" class="btn-cta"
+                        style="font-size: 0.85rem; padding: 12px 25px; display: inline-block; min-width: 150px;"
+                        data-i18n="btn_info">Ver Agenda</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Materials Section (Amazon Affiliate Mockup) -->
+        <section class="materials-recommendation" style="margin-top: 80px; padding: 40px 0;">
+            <h2 class="section-title" style="text-align: center; margin-bottom: 50px;" data-i18n="materials_title">
+                Materiais Recomendados</h2>
+            <div style="max-width: 700px; margin: 0 auto 40px; text-align: center;">
+                <p style="color: #666; font-size: 1.05rem; line-height: 1.7;" data-i18n="materials_intro">
+                    Para quem quer começar ou elevar a sua prática técnica, selecionei as ferramentas que mais utilizo
+                    no meu atelier.
+                    <br><small style="font-size: 0.8rem; color: #999; display: block; margin-top: 10px;">(Como afiliada
+                        Amazon, recebo uma pequena comissão por compras qualificadas, sem custo extra para si.)</small>
+                </p>
+            </div>
+
+            <div class="grid-3" style="gap: 30px;">
+                <!-- Product 1 -->
+                <div class="course-card"
+                    style="text-align: center; padding: 30px; border: 1px solid #eee; transition: all 0.3s ease;">
+                    <div
+                        style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                        <img src="assets/materials/brushes_placeholder.jpg" alt="Kit Pincéis"
+                            style="max-height: 100%; max-width: 100%; filter: grayscale(1);">
+                    </div>
+                    <h4 style="margin-bottom: 10px;" data-i18n="materials_kit_title">Kit Pincéis Iniciação</h4>
+                    <p style="font-size: 0.85rem; color: #777; margin-bottom: 20px;" data-i18n="materials_kit_desc">
+                        Conjunto versátil de cerdas
+                        sintéticas para acrílico e óleo.</p>
+                    <a href="#" target="_blank" class="btn-cta"
+                        style="font-size: 0.75rem; padding: 10px 20px; background: #232f3e; border: none; min-width: 130px;"
+                        data-i18n="btn_amazon">Ver
+                        na Amazon</a>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="course-card"
+                    style="text-align: center; padding: 30px; border: 1px solid #eee; transition: all 0.3s ease;">
+                    <div
+                        style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                        <img src="assets/materials/easel_placeholder.jpg" alt="Cavalete"
+                            style="max-height: 100%; max-width: 100%; filter: grayscale(1);">
+                    </div>
+                    <h4 style="margin-bottom: 10px;" data-i18n="materials_easel_title">Cavalete de Alumínio</h4>
+                    <p style="font-size: 0.85rem; color: #777; margin-bottom: 20px;" data-i18n="materials_easel_desc">
+                        Leve, estável e ajustável. Ideal
+                        para pintar em casa ou no exterior.</p>
+                    <a href="#" target="_blank" class="btn-cta"
+                        style="font-size: 0.75rem; padding: 10px 20px; background: #232f3e; border: none; min-width: 130px;"
+                        data-i18n="btn_amazon">Ver
+                        na Amazon</a>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="course-card"
+                    style="text-align: center; padding: 30px; border: 1px solid #eee; transition: all 0.3s ease;">
+                    <div
+                        style="height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                        <img src="assets/materials/oil_paints_placeholder.jpg" alt="Tintas"
+                            style="max-height: 100%; max-width: 100%; filter: grayscale(1);">
+                    </div>
+                    <h4 style="margin-bottom: 10px;" data-i18n="materials_paints_title">Set Tintas Profissionais</h4>
+                    <p style="font-size: 0.85rem; color: #777; margin-bottom: 20px;" data-i18n="materials_paints_desc">
+                        Seleção de pigmentos puros para uma
+                        profundidade de cor única.</p>
+                    <a href="#" target="_blank" class="btn-cta"
+                        style="font-size: 0.75rem; padding: 10px 20px; background: #232f3e; border: none; min-width: 130px;"
+                        data-i18n="btn_amazon">Ver
+                        na Amazon</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section class="testimonials"
+            style="margin-top: 80px; padding: 60px 0; background: #fafafa; border-radius: 8px;">
+            <div class="container">
+                <h2 class="section-title" style="text-align: center; margin-bottom: 50px;">O que dizem os Alunos</h2>
+                <div class="grid-3">
+                    <div class="review-card"
+                        style="background: white; padding: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-radius: 4px;">
+                        <p style="font-style: italic; color: #555; margin-bottom: 20px;">"A Ana ajudou-me a desbloquear
+                            o meu processo criativo. As sessões de mentoria foram cruciais para eu conseguir montar a
+                            minha primeira exposição individual."</p>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width: 40px; height: 40px; background: #ddd; border-radius: 50%;"></div>
+                            <div>
+                                <h4 style="margin: 0; font-size: 0.95rem;">Joana M.</h4>
+                                <span style="font-size: 0.8rem; color: #999;">Artista Plástica</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-card"
+                        style="background: white; padding: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-radius: 4px;">
+                        <p style="font-style: italic; color: #555; margin-bottom: 20px;">"O workshop de preparação de
+                            telas mudou a forma como olho para os materiais. Aprendi técnicas que não ensinam na
+                            faculdade."</p>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width: 40px; height: 40px; background: #ddd; border-radius: 50%;"></div>
+                            <div>
+                                <h4 style="margin: 0; font-size: 0.95rem;">Carlos S.</h4>
+                                <span style="font-size: 0.8rem; color: #999;">Estudante de Belas Artes</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-card"
+                        style="background: white; padding: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-radius: 4px;">
+                        <p style="font-style: italic; color: #555; margin-bottom: 20px;">"Ambiente fantástico no
+                            atelier. Senti-me muito apoiada nas aulas regulares, independentemente do meu nível ser
+                            iniciante."</p>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width: 40px; height: 40px; background: #ddd; border-radius: 50%;"></div>
+                            <div>
+                                <h4 style="margin: 0; font-size: 0.95rem;">Maria L.</h4>
+                                <span style="font-size: 0.8rem; color: #999;">Aluna de Iniciação</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4 data-i18n="footer_nav">Navegação</h4>
+                    <ul>
+                        <li><a href="index.html" data-i18n="shop" data-i18n="home">Início</a></li>
+                        <li><a href="galeria.html" data-i18n="gallery">Galeria</a></li>
+                        <li><a href="mentoria.html" data-i18n="classes">Aulas & Workshops</a></li>
+                        <li><a href="sobre.html" data-i18n="about">Sobre</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_support">Apoio ao Cliente</h4>
+                    <ul>
+                        <li><a href="#" data-i18n="shipping">Envios e Devoluções</a></li>
+                        <li><a href="#" data-i18n="terms">Termos e Condições</a></li>
+                    </ul>
+                    <div class="payment-badges" style="flex-direction: column; gap: 5px; margin-top: 10px;">
+                        <span class="badge">CTT Expresso</span>
+                        <span class="badge">Devolução 14 Dias</span>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_contacts">Contactos</h4>
+                    <ul>
+                        <li>amargaridajalexandre@gmail.com</li>
+                        <li>+351 967 060 682</li>
+                    </ul>
+                    <div class="payment-badges" style="margin-top: 15px;">
+                        <span class="badge">MB WAY</span>
+                        <span class="badge">Visa</span>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_newsletter_title">Newsletter</h4>
+                    <p style="font-size: 0.9rem; margin-bottom: 10px; color: #555;" data-i18n="newsletter_text">Ganhe
+                        10% de desconto na 1ª aula ou no 1º quadro. Junte-se à lista VIP.</p>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="O seu email" data-i18n="placeholder_email">
+                        <button type="submit">&rarr;</button>
+                    </form>
+                </div>
+            </div>
+            <div class="copyright">
+                &copy; 2024 Ana Alexandre.
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/cart.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/main.js?v=6"></script>
+</body>
+
+</html>
