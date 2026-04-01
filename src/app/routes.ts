@@ -8,12 +8,10 @@ import { MentoriaPage } from "./components/MentoriaPage";
 import { ContactosPage } from "./components/ContactosPage";
 import { PremioPage } from "./components/PremioPage";
 import { LoginPage } from "./components/LoginPage";
-import { RegisterPage } from "./components/RegisterPage";
 import { AdminDashboard } from "./components/AdminDashboard";
 
 export const router = createBrowserRouter([
   { path: "/login", Component: LoginPage },
-  { path: "/register", Component: RegisterPage },
   { path: "/admin", Component: AdminDashboard },
   {
     path: "/",

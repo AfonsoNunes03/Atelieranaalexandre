@@ -1,0 +1,483 @@
+import { useState, useEffect } from "react";
+import { getObras, createObra, updateObra, deleteObra } from "../../../../lib/db";
+import { motion, AnimatePresence } from "motion/react";
+import { 
+  Plus, Edit2, Trash2, Image as ImageIcon, Search, 
+  Filter, MoreVertical, CheckCircle, XCircle, Clock, 
+  ExternalLink, ChevronRight, X, Save, Upload
+} from "lucide-react";
+import { toast } from "../../../../lib/toast";
+
+const GOLD = "#C9A96E";
+const SLATE = "#64748B";
+
+type EstadoObra = "disponivel" | "reservado" | "vendido";
+
+interface Obra {
+  id: string;
+  titulo: string;
+  tecnica: string;
+  dimensoes: string | null;
+  ano: number | null;
+  preco: number | null;
+  estado: string;
+  imagem_url: string | null;
+  slug: string;
+  destaque: boolean;
+}
+
+const ESTADO_LABEL: Record<string, string> = {
+  disponivel: "Disponível",
+  reservado: "Reservado",
+  vendido: "Vendido",
+};
+
+export function ObrasSection({ globalSearch }: { globalSearch: string }) {
+  const [obras, setObras] = useState<Obra[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState("Todos");
+  const [showModal, setShowModal] = useState(false);
+  const [editingObra, setEditingObra] = useState<Obra | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      setLoading(true);
+      const data = await getObras();
+      setObras(data as any);
+    } catch (err) {
+      toast.error("Erro ao carregar obras.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const filtered = obras.filter((o) => {
+    const label = ESTADO_LABEL[o.estado] ?? o.estado;
+    const matchesStatus = filterStatus === "Todos" || label === filterStatus;
+    const matchesSearch = 
+      !globalSearch || 
+      o.titulo.toLowerCase().includes(globalSearch.toLowerCase()) || 
+      o.tecnica.toLowerCase().includes(globalSearch.toLowerCase());
+    
+    return matchesStatus && matchesSearch;
+  });
+
+  const handleEdit = (obra: Obra) => {
+    setEditingObra(obra);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteObra(id);
+      setObras((prev) => prev.filter((o) => o.id !== id));
+      toast.success("Obra removida com sucesso.");
+      setDeleteId(null);
+    } catch (err) {
+      toast.error("Erro ao eliminar obra.");
+    }
+  };
+
+  return (
+    <div style={{ padding: "24px 32px" }}>
+      {/* Header controls */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          {["Todos", "Disponível", "Reservado", "Vendido"].map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilterStatus(s)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 10,
+                border: "1px solid",
+                borderColor: filterStatus === s ? GOLD : "#eef0f3",
+                background: filterStatus === s ? GOLD : "#fff",
+                color: filterStatus === s ? "#fff" : SLATE,
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => {
+            setEditingObra(null);
+            setShowModal(true);
+          }}
+          style={{
+            background: "#1a1c1e",
+            color: "#fff",
+            border: "none",
+            borderRadius: 12,
+            padding: "10px 20px",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+          }}
+        >
+          <Plus size={18} />
+          Nova Obra
+        </button>
+      </div>
+
+      {/* Grid of Artworks */}
+      {loading ? (
+        <div style={{ padding: 100, textAlign: "center", color: SLATE }}>A carregar inventário...</div>
+      ) : (
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", 
+          gap: 24 
+        }}>
+          {filtered.map((obra) => (
+            <ObraCard 
+              key={obra.id} 
+              obra={obra} 
+              onEdit={() => handleEdit(obra)} 
+              onDelete={() => setDeleteId(obra.id)}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div style={{ gridColumn: "1 / -1", padding: 80, textAlign: "center", background: "#fff", borderRadius: 20, border: "1px dashed #ced4da" }}>
+              <p style={{ color: SLATE, margin: 0 }}>Nenhuma obra encontrada para os filtros selecionados.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modals */}
+      <AnimatePresence>
+        {showModal && (
+          <ObraFormModal 
+            obra={editingObra} 
+            onClose={() => setShowModal(false)} 
+            onSuccess={() => {
+              setShowModal(false);
+              load();
+            }}
+          />
+        )}
+        {deleteId && (
+          <ConfirmDeleteModal 
+            onConfirm={() => handleDelete(deleteId)} 
+            onCancel={() => setDeleteId(null)} 
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function ObraCard({ obra, onEdit, onDelete }: { obra: Obra; onEdit: () => void; onDelete: () => void }) {
+  const status = (ESTADO_LABEL[obra.estado] || obra.estado) as string;
+  
+  return (
+    <motion.div
+      layout
+      style={{
+        background: "#fff",
+        borderRadius: 20,
+        border: "1px solid #eef0f3",
+        overflow: "hidden",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+        transition: "transform 0.2s, box-shadow 0.2s",
+      }}
+      whileHover={{ y: -4, boxShadow: "0 12px 30px rgba(0,0,0,0.06)" }}
+    >
+      <div style={{ position: "relative", aspectRatio: "4/3", background: "#f8f9fa", overflow: "hidden" }}>
+        {obra.imagem_url ? (
+          <img 
+            src={obra.imagem_url} 
+            alt={obra.titulo} 
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+          />
+        ) : (
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#ced4da" }}>
+            <ImageIcon size={48} strokeWidth={1} />
+          </div>
+        )}
+        
+        <div style={{ 
+          position: "absolute", 
+          top: 12, 
+          right: 12,
+          padding: "6px 12px",
+          borderRadius: 8,
+          fontSize: "0.7rem",
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          background: status === "Disponível" ? "#10B981" : status === "Reservado" ? "#F59E0B" : "#EF4444",
+          color: "#fff",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+        }}>
+          {status}
+        </div>
+      </div>
+
+      <div style={{ padding: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+          <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#1a2130", margin: 0, fontFamily: "var(--font-serif)" }}>
+            {obra.titulo}
+          </h3>
+          <span style={{ fontSize: "1.1rem", fontWeight: 700, color: GOLD }}>
+            {obra.preco ? `€${obra.preco.toLocaleString("pt-PT")}` : "—"}
+          </span>
+        </div>
+        
+        <p style={{ fontSize: "0.8rem", color: SLATE, marginBottom: 20 }}>
+          {obra.tecnica} • {obra.dimensoes || "Dimensões N/D"}
+        </p>
+
+        <div style={{ display: "flex", gap: 10, paddingTop: 16, borderTop: "1px solid #f1f3f5" }}>
+          <button
+            onClick={onEdit}
+            style={{
+              flex: 1,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "10px",
+              borderRadius: 10,
+              background: "#f8f9fa",
+              border: "1px solid #eef0f3",
+              color: "#4a5568",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            <Edit2 size={14} /> Editar
+          </button>
+          <button
+            onClick={onDelete}
+            style={{
+              width: 44,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "10px",
+              borderRadius: 10,
+              background: "#fff1f1",
+              border: "1px solid #ffebeb",
+              color: "#ef4444",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function ObraFormModal({ obra, onClose, onSuccess }: { obra: Obra | null; onClose: () => void; onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    titulo: obra?.titulo || "",
+    tecnica: obra?.tecnica || "",
+    dimensoes: obra?.dimensoes || "",
+    ano: obra?.ano?.toString() || new Date().getFullYear().toString(),
+    preco: obra?.preco?.toString() || "",
+    estado: obra?.estado || "disponivel",
+    imagem_url: obra?.imagem_url || "",
+    destaque: obra?.destaque || false,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const dataToSave = {
+        ...formData,
+        ano: parseInt(formData.ano) || null,
+        preco: parseFloat(formData.preco.replace(",", ".")) || null,
+        slug: formData.titulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"),
+      };
+
+      if (obra) {
+        await updateObra(obra.id, dataToSave);
+        toast.success("Obra atualizada!");
+      } else {
+        await createObra(dataToSave as any);
+        toast.success("Nova obra adicionada!");
+      }
+      onSuccess();
+    } catch (err) {
+      toast.error("Erro ao guardar obra.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }} />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }} 
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        style={{ position: "relative", background: "#fff", width: "100%", maxWidth: 800, borderRadius: 24, overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+      >
+        <div style={{ padding: "24px 32px", borderBottom: "1px solid #f1f3f5", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#1a2130" }}>{obra ? "Editar Obra" : "Nova Obra"}</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: SLATE }}><X size={24} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ padding: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+            <div className="space-y-4">
+              <FormGroup label="Título da Obra">
+                <input required value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})} style={inputStyle} />
+              </FormGroup>
+              
+              <FormGroup label="Técnica">
+                <select value={formData.tecnica} onChange={e => setFormData({...formData, tecnica: e.target.value})} style={inputStyle}>
+                  <option value="Acrílico sobre Tela">Acrílico sobre Tela</option>
+                  <option value="Óleo sobre Tela">Óleo sobre Tela</option>
+                  <option value="Técnica Mista">Técnica Mista</option>
+                  <option value="Grafite sobre Papel">Grafite sobre Papel</option>
+                  <option value="Escultura">Escultura</option>
+                </select>
+              </FormGroup>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <FormGroup label="Ano">
+                  <input type="number" value={formData.ano} onChange={e => setFormData({...formData, ano: e.target.value})} style={inputStyle} />
+                </FormGroup>
+                <FormGroup label="Preço (€)">
+                  <input type="text" value={formData.preco} onChange={e => setFormData({...formData, preco: e.target.value})} style={inputStyle} />
+                </FormGroup>
+              </div>
+
+              <FormGroup label="Dimensões (Ex: 100x80cm)">
+                <input value={formData.dimensoes} onChange={e => setFormData({...formData, dimensoes: e.target.value})} style={inputStyle} />
+              </FormGroup>
+            </div>
+
+            <div className="space-y-4">
+              <FormGroup label="Estado de Disponibilidade">
+                <div style={{ display: "flex", gap: 8 }}>
+                  {Object.entries(ESTADO_LABEL).map(([val, label]) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setFormData({...formData, estado: val})}
+                      style={{
+                        flex: 1, padding: "10px", borderRadius: 10, border: "1px solid",
+                        borderColor: formData.estado === val ? GOLD : "#eef0f3",
+                        background: formData.estado === val ? `${GOLD}10` : "#fff",
+                        color: formData.estado === val ? GOLD : SLATE,
+                        fontSize: "0.75rem", fontWeight: 600, cursor: "pointer"
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </FormGroup>
+
+              <FormGroup label="URL da Imagem">
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={formData.imagem_url} onChange={e => setFormData({...formData, imagem_url: e.target.value})} style={inputStyle} placeholder="https://..." />
+                </div>
+              </FormGroup>
+              
+              <div style={{ 
+                marginTop: 20, 
+                padding: 16, 
+                background: "#f8f9fa", 
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between"
+              }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 600, color: "#1a2130" }}>Obra em Destaque</p>
+                  <p style={{ margin: 0, fontSize: "0.7rem", color: SLATE }}>Aparecerá na página inicial</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={formData.destaque} 
+                  onChange={e => setFormData({...formData, destaque: e.target.checked})}
+                  style={{ width: 20, height: 20, accentColor: GOLD }}
+                />
+              </div>
+
+              <div style={{ marginTop: 24, padding: "12px 16px", background: "rgba(201,169,110,0.05)", borderRadius: 12 }}>
+                <p style={{ fontSize: "0.75rem", color: GOLD, margin: 0, lineHeight: 1.5 }}>
+                  <strong>Dica:</strong> Para melhores resultados, use imagens com rácio 3:4 ou 4:5 e boa resolução.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 40, display: "flex", gap: 12 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "1px solid #eef0f3", background: "#fff", color: SLATE, fontWeight: 600, cursor: "pointer" }}>Cancelar</button>
+            <button type="submit" disabled={loading} style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: GOLD, color: "#fff", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              {loading ? "A processar..." : <><Save size={18} /> {obra ? "Guardar Alterações" : "Adicionar Obra"}</>}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+function ConfirmDeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCancel} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }} />
+      <motion.div 
+         initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+         style={{ position: "relative", background: "#fff", width: "100%", maxWidth: 400, borderRadius: 24, padding: 32, textAlign: "center" }}
+      >
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#fff1f1", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+          <Trash2 size={32} />
+        </div>
+        <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: 12 }}>Confirmar Eliminação</h3>
+        <p style={{ color: SLATE, fontSize: "0.9rem", lineHeight: 1.6, marginBottom: 32 }}>Tem a certeza que deseja remover esta obra definitivamente? Esta ação não pode ser desfeita.</p>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button onClick={onCancel} style={{ flex: 1, padding: "12px", borderRadius: 12, border: "1px solid #eef0f3", background: "#fff", color: SLATE, fontWeight: 600, cursor: "pointer" }}>Cancelar</button>
+          <button onClick={onConfirm} style={{ flex: 1, padding: "12px", borderRadius: 12, border: "none", background: "#ef4444", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Eliminar</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function FormGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <label style={{ fontSize: "0.75rem", fontWeight: 600, color: SLATE, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const inputStyle = {
+  width: "100%" as const,
+  padding: "12px 16px",
+  borderRadius: 12,
+  border: "1px solid #dee2e6",
+  fontSize: "0.9rem",
+  outline: "none",
+  background: "#fcfcfc",
+  color: "#333",
+};
