@@ -1,4 +1,4 @@
-import { RouterProvider } from "react-router";
+import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
 import { LanguageProvider } from "./i18n";
 

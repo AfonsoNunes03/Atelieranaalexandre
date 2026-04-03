@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../lib/cart";
 import { enviarContacto, createVenda } from "../../lib/db";
+import { supabase } from "../../lib/supabase";
 import { useSEO } from "../../lib/useSEO";
 import { createStripeCheckoutSession } from "../../lib/stripe";
 import { sendTransferOrderEmail } from "../../lib/email";
@@ -47,6 +48,18 @@ export function CheckoutPage() {
     setSending(true);
 
     try {
+      // 0. Verificar disponibilidade das obras antes de prosseguir
+      const { data: obrasAtuais } = await supabase
+        .from("obras")
+        .select("id, titulo, estado")
+        .in("id", items.map(i => i.id));
+      const indisponiveis = (obrasAtuais ?? []).filter(o => o.estado !== "disponivel");
+      if (indisponiveis.length > 0) {
+        setError(`"${indisponiveis[0].titulo}" já não está disponível. Atualiza o carrinho.`);
+        setSending(false);
+        return;
+      }
+
       // 1. Criar registo de venda na base de dados (Sempre fazemos isto primeiro)
       const vendaId = await createVenda({
         cliente_nome: form.nome,

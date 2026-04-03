@@ -3,7 +3,8 @@ import image_170c757da3ac42fa32a32a3cbf1f2416044743dd from 'figma:asset/170c757d
 import image_26fa80762b3bb676a93d34e2887e0e81b564bb76 from "figma:asset/26fa80762b3bb676a93d34e2887e0e81b564bb76.png";
 import image_37ae076f9c70040c1e86be4bab8a3370e8023d9e from "figma:asset/37ae076f9c70040c1e86be4bab8a3370e8023d9e.png";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "react-router";
+import { getObras } from "../../lib/db";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "motion/react";
 import { FadeIn } from "./FadeIn";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -39,123 +40,64 @@ const IMG_INTERIOR =
 const IMG_STUDIO =
   "https://images.unsplash.com/photo-1772311992748-57ec07ee2e05?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcnRpc3QlMjBzdHVkaW8lMjBjb250ZW1wb3JhcnklMjBjcmVhdGl2ZSUyMHdvcmtzcGFjZXxlbnwxfHx8fDE3NzMwNTQyNzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 
-// ─── Categories ─────────────────────────────────────────────────────────────────
-const categories = [
-  { id: "all", label: "Todas", count: 6 },
-  { id: "acervo", label: "Obras Principais", count: 3 },
-  { id: "series", label: "Séries Temáticas", count: 2 },
-  { id: "drawing", label: "Desenhos & Estudos", count: 1 },
-];
+// ─── Gallery artwork type ────────────────────────────────────────────────────────
+interface GaleriaObra {
+  id: string;
+  title: string;
+  technique: string;
+  dimensions: string;
+  year: string;
+  price: number;
+  status: string;
+  category: string;
+  techniqueType: string;
+  size: string;
+  dominantColor: string;
+  theme: string;
+  image: string;
+  aspect: string;
+  featured: boolean;
+}
 
-// ─── Artworks ──────────────────────────────────────────────────────────────────
-const artworks = [
-  {
-    id: 1,
-    title: "Sem Título I",
-    technique: "Acrílico sobre Tela",
-    dimensions: "100×80cm",
-    year: "2025",
-    price: 1200,
-    status: "Disponível",
-    category: "acervo",
-    techniqueType: "acrylic",
-    size: "medium",
-    dominantColor: "brown",
-    theme: "abstract",
-    image: image_37ae076f9c70040c1e86be4bab8a3370e8023d9e,
-    aspect: "4/5",
-    featured: true,
-  },
-  {
-    id: 2,
-    title: "Sem Título II",
-    technique: "Óleo sobre Tela",
-    dimensions: "120×100cm",
-    year: "2024",
-    price: 1800,
-    status: "Disponível",
-    category: "acervo",
-    techniqueType: "oil",
-    size: "large",
-    dominantColor: "blue",
-    theme: "abstract",
-    image:
-      "https://images.unsplash.com/photo-1662124530117-7774f635f9f9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMGJsdWUlMjBnb2xkJTIwYnJ1c2hzdHJva2VzfGVufDF8fHx8MTc3MjUzNjk0OHww&ixlib=rb-4.1.0&q=80&w=1080",
-    aspect: "3/4",
-    featured: false,
-  },
-  {
-    id: 3,
-    title: "Sem Título III",
-    technique: "Técnica Mista",
-    dimensions: "80×60cm",
-    year: "2024",
-    price: 900,
-    status: "Reservado",
-    category: "series",
-    techniqueType: "mixed",
-    size: "small",
-    dominantColor: "red",
-    theme: "abstract",
-    image:
-      "https://images.unsplash.com/photo-1566153509056-c1d1a75078a4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHBhaW50aW5nJTIwcmVkJTIwdGVycmFjb3R0YSUyMHRleHR1cmV8ZW58MXx8fHwxNzcyNTM2OTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    aspect: "4/5",
-    featured: false,
-  },
-  {
-    id: 4,
-    title: "Fragmento IV",
-    technique: "Acrílico e Resina",
-    dimensions: "150×120cm",
-    year: "2023",
-    price: 2400,
-    status: "Disponível",
-    category: "acervo",
-    techniqueType: "acrylic",
-    size: "oversized",
-    dominantColor: "blue",
-    theme: "abstract",
-    image:
-      "https://images.unsplash.com/photo-1635141849017-c531949fb5b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHBhaW50aW5nJTIwY29sb3JmdWwlMjB0ZXh0dXJlJTIwY2FudmFzfGVufDF8fHx8MTc3MjUzNjk0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    aspect: "3/4",
-    featured: true,
-  },
-  {
-    id: 5,
-    title: "Estudo V",
-    technique: "Grafite sobre Papel",
-    dimensions: "42×29.7cm",
-    year: "2025",
-    price: 350,
-    status: "Disponível",
-    category: "drawing",
-    techniqueType: "drawing",
-    size: "small",
-    dominantColor: "black",
-    theme: "abstract",
-    image:
-      "https://images.unsplash.com/photo-1527072822261-d82e76bdb103?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHBhaW50aW5nJTIwY29sb3JmdWwlMjB0ZXh0dXJlJTIwY2FudmFzfGVufDF8fHx8MTc3MjUzNjk0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    aspect: "3/4",
-    featured: false,
-  },
-  {
-    id: 6,
-    title: "Cartografia VI",
-    technique: "Técnica Mista sobre Tela",
-    dimensions: "100×100cm",
-    year: "2023",
-    price: 1500,
-    status: "Disponível",
-    category: "series",
-    techniqueType: "mixed",
+function mapObraToGaleria(o: {
+  id: string; titulo: string; tecnica: string; dimensoes: string | null;
+  ano: number | null; preco: number | null; estado: string;
+  imagem_url: string | null; slug: string; destaque: boolean;
+}): GaleriaObra {
+  const t = o.tecnica.toLowerCase();
+  const techniqueType = t.includes("grafite") || t.includes("papel") ? "drawing"
+    : t.includes("óleo") || t.includes("oleo") ? "oil"
+    : t.includes("mista") ? "mixed"
+    : "acrylic";
+  const category = techniqueType === "drawing" ? "drawing"
+    : techniqueType === "mixed" ? "series"
+    : "acervo";
+  const estadoMap: Record<string, string> = { disponivel: "Disponível", reservado: "Reservado", vendido: "Vendido" };
+  return {
+    id: o.slug,
+    title: o.titulo,
+    technique: o.tecnica,
+    dimensions: o.dimensoes || "",
+    year: o.ano?.toString() || "",
+    price: o.preco || 0,
+    status: estadoMap[o.estado] || o.estado,
+    category,
+    techniqueType,
     size: "medium",
     dominantColor: "black",
-    theme: "landscape",
-    image:
-      "https://images.unsplash.com/photo-1556139930-c23fa4a4f934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMG1peGVkJTIwbWVkaWElMjBwYWludGluZyUyMGRhcmslMjBtb29keXxlbnwxfHx8fDE3NzI1MzY5NTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    aspect: "1/1",
-    featured: false,
-  },
+    theme: "abstract",
+    image: o.imagem_url || "",
+    aspect: "3/4",
+    featured: o.destaque,
+  };
+}
+
+// ─── Categories ─────────────────────────────────────────────────────────────────
+const CATEGORIES_BASE = [
+  { id: "all", label: "Todas" },
+  { id: "acervo", label: "Obras Principais" },
+  { id: "series", label: "Séries Temáticas" },
+  { id: "drawing", label: "Desenhos & Estudos" },
 ];
 
 // ─── Animated Counter ───────────────────────────────────────────────────────────
@@ -204,10 +146,10 @@ function ArtworkCard({
   viewMode,
   onQuickView,
 }: {
-  work: (typeof artworks)[0];
+  work: GaleriaObra;
   index: number;
   viewMode: "grid" | "list";
-  onQuickView: (work: (typeof artworks)[0]) => void;
+  onQuickView: (work: GaleriaObra) => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -418,7 +360,7 @@ function QuickViewModal({
   work,
   onClose,
 }: {
-  work: (typeof artworks)[0] | null;
+  work: GaleriaObra | null;
   onClose: () => void;
 }) {
   if (!work) return null;
@@ -541,10 +483,11 @@ function QuickViewModal({
 
 // ── Main Gallery Page ──────────────────────────────────────────────────────────
 export function GaleriaPage() {
+  const [artworks, setArtworks] = useState<GaleriaObra[]>([]);
   const [activeCategory, setActiveCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("newest");
-  const [quickViewWork, setQuickViewWork] = useState<(typeof artworks)[0] | null>(null);
+  const [quickViewWork, setQuickViewWork] = useState<GaleriaObra | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [filters, setFilters] = useState<FilterState>({
@@ -555,6 +498,15 @@ export function GaleriaPage() {
     themes: [],
     availableOnly: false,
   });
+
+  useEffect(() => {
+    getObras().then((data) => setArtworks((data as any[]).map(mapObraToGaleria)));
+  }, []);
+
+  const categories = CATEGORIES_BASE.map((cat) => ({
+    ...cat,
+    count: cat.id === "all" ? artworks.length : artworks.filter((w) => w.category === cat.id).length,
+  }));
 
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -766,7 +718,7 @@ export function GaleriaPage() {
           </FadeIn>
 
           <AnimatePresence mode="wait">
-            <motion.div
+            {featuredWorks.length === 0 ? null : <motion.div
               key={featuredIndex}
               className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-8 lg:gap-16 items-center"
               initial={{ opacity: 0, x: 40 }}
@@ -892,7 +844,7 @@ export function GaleriaPage() {
                   </Link>
                 </div>
               </div>
-            </motion.div>
+            </motion.div>}
           </AnimatePresence>
         </div>
       </section>

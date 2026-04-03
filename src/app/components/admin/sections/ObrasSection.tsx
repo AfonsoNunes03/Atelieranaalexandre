@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { getObras, createObra, updateObra, deleteObra } from "../../../../lib/db";
+import { useState, useEffect, useRef } from "react";
+import { getObras, createObra, updateObra, deleteObra, uploadObraImage } from "../../../../lib/db";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  Plus, Edit2, Trash2, Image as ImageIcon, Search, 
-  Filter, MoreVertical, CheckCircle, XCircle, Clock, 
+import {
+  Plus, Edit2, Trash2, Image as ImageIcon, Search,
+  Filter, MoreVertical, CheckCircle, XCircle, Clock,
   ExternalLink, ChevronRight, X, Save, Upload
 } from "lucide-react";
 import { toast } from "../../../../lib/toast";
@@ -288,6 +288,9 @@ function ObraCard({ obra, onEdit, onDelete }: { obra: Obra; onEdit: () => void; 
 
 function ObraFormModal({ obra, onClose, onSuccess }: { obra: Obra | null; onClose: () => void; onSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     titulo: obra?.titulo || "",
     tecnica: obra?.tecnica || "",
@@ -298,6 +301,27 @@ function ObraFormModal({ obra, onClose, onSuccess }: { obra: Obra | null; onClos
     imagem_url: obra?.imagem_url || "",
     destaque: obra?.destaque || false,
   });
+
+  const handleImageFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Ficheiro inválido. Usa uma imagem.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Imagem demasiado grande. Máximo 10 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadObraImage(file);
+      setFormData(prev => ({ ...prev, imagem_url: url }));
+      toast.success("Imagem carregada!");
+    } catch {
+      toast.error("Erro ao carregar imagem.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -393,10 +417,71 @@ function ObraFormModal({ obra, onClose, onSuccess }: { obra: Obra | null; onClos
                 </div>
               </FormGroup>
 
-              <FormGroup label="URL da Imagem">
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input value={formData.imagem_url} onChange={e => setFormData({...formData, imagem_url: e.target.value})} style={inputStyle} placeholder="https://..." />
+              <FormGroup label="Imagem da Obra">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ""; }}
+                />
+                <div
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleImageFile(f); }}
+                  onClick={() => !uploading && fileInputRef.current?.click()}
+                  style={{
+                    border: `2px dashed ${dragOver ? GOLD : "#dee2e6"}`,
+                    borderRadius: 12,
+                    background: dragOver ? `${GOLD}08` : formData.imagem_url ? "#f8f9fa" : "#fcfcfc",
+                    cursor: uploading ? "wait" : "pointer",
+                    overflow: "hidden",
+                    transition: "all 0.2s",
+                    minHeight: 140,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                  }}
+                >
+                  {uploading ? (
+                    <div style={{ textAlign: "center", padding: 24 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${GOLD}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+                      <p style={{ margin: 0, fontSize: "0.8rem", color: SLATE }}>A carregar imagem...</p>
+                    </div>
+                  ) : formData.imagem_url ? (
+                    <>
+                      <img src={formData.imagem_url} alt="preview" style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "all 0.2s" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.4)"; (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0)"; (e.currentTarget as HTMLElement).style.opacity = "0"; }}
+                      >
+                        <div style={{ textAlign: "center", color: "#fff" }}>
+                          <Upload size={24} style={{ marginBottom: 6 }} />
+                          <p style={{ margin: 0, fontSize: "0.75rem", fontWeight: 600 }}>Substituir imagem</p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ textAlign: "center", padding: 24 }}>
+                      <div style={{ width: 48, height: 48, borderRadius: "50%", background: `${GOLD}15`, color: GOLD, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                        <Upload size={22} />
+                      </div>
+                      <p style={{ margin: "0 0 4px", fontSize: "0.85rem", fontWeight: 600, color: "#1a2130" }}>Arrasta a imagem ou clica para selecionar</p>
+                      <p style={{ margin: 0, fontSize: "0.75rem", color: SLATE }}>PNG, JPG, WEBP · Máx. 10 MB</p>
+                    </div>
+                  )}
                 </div>
+                {formData.imagem_url && (
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setFormData(prev => ({ ...prev, imagem_url: "" })); }}
+                    style={{ marginTop: 6, background: "none", border: "none", color: "#ef4444", fontSize: "0.75rem", cursor: "pointer", textAlign: "left", padding: 0 }}
+                  >
+                    × Remover imagem
+                  </button>
+                )}
               </FormGroup>
               
               <div style={{ 

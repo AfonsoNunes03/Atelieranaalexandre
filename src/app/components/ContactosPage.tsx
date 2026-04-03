@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { enviarContacto } from "../../lib/db";
 import { motion, AnimatePresence } from "motion/react";
 import {
   MapPin, Mail, Phone, Instagram,
@@ -209,6 +210,7 @@ export function ContactosPage() {
   const [selectedIntention,  setSelectedIntention]  = useState<string>("obra");
   const [formSubmitted,      setFormSubmitted]      = useState(false);
   const [submitting,         setSubmitting]         = useState(false);
+  const [formError,          setFormError]          = useState<string | null>(null);
   const [nome,               setNome]               = useState("");
   const [email,              setEmail]              = useState("");
   const [telefone,           setTelefone]           = useState("");
@@ -217,10 +219,24 @@ export function ContactosPage() {
   const formRef    = useRef<HTMLDivElement>(null);
   const selectedData = intentions.find(i => i.id === selectedIntention)!;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setTimeout(() => { setSubmitting(false); setFormSubmitted(true); }, 1600);
+    setFormError(null);
+    try {
+      await enviarContacto({
+        nome,
+        email,
+        telefone: telefone || null,
+        mensagem,
+        assunto: selectedIntention,
+      });
+      setFormSubmitted(true);
+    } catch {
+      setFormError("Erro ao enviar mensagem. Por favor tenta novamente.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const scrollToForm = (id: string) => {
@@ -505,6 +521,12 @@ export function ContactosPage() {
                       <p className="text-[0.72rem] leading-[1.6]" style={{ color: "#ccc" }}>
                         Os seus dados são utilizados exclusivamente para responder à sua mensagem, em conformidade com o RGPD.
                       </p>
+
+                      {formError && (
+                        <p style={{ fontSize: "0.8rem", color: "#B91C1C", textAlign: "center" }}>
+                          {formError}
+                        </p>
+                      )}
 
                       <div>
                         <motion.button

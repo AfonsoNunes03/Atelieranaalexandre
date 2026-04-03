@@ -8,11 +8,16 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = ["https://atelieranaalexandre.pt", "http://localhost:5173"];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  const corsOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": corsOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 interface EmailPayload {
   to: string;
@@ -26,14 +31,15 @@ interface EmailPayload {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     const resendKey = Deno.env.get("RESEND_API_KEY");
-    const notifyEmail =
-      Deno.env.get("NOTIFY_EMAIL") ?? "atelier.anaalexandre@gmail.com";
+    const notifyEmail = Deno.env.get("NOTIFY_EMAIL") ?? "";
 
     if (!resendKey) {
       return new Response(
@@ -57,7 +63,8 @@ serve(async (req) => {
     if (payload.type === "transfer_order") {
       const total = (payload.data?.total as number) ?? 0;
       const items = (payload.data?.items as Array<{ titulo: string; preco: number }>) ?? [];
-      html = buildTransferOrderHtml(payload.customerName, total, items, notifyEmail);
+      const iban = Deno.env.get("IBAN_ATELIER") ?? "Contactar atelier para dados bancários";
+      html = buildTransferOrderHtml(payload.customerName, total, items, notifyEmail, iban);
       subject = subject || "Pedido recebido — Ana Alexandre Atelier";
     } else if (payload.type === "contact_confirmation") {
       html = buildContactConfirmationHtml(payload.customerName);
@@ -107,7 +114,8 @@ function buildTransferOrderHtml(
   name: string,
   total: number,
   items: Array<{ titulo: string; preco: number }>,
-  atelierEmail: string
+  atelierEmail: string,
+  iban: string
 ): string {
   const totalFmt = total.toLocaleString("pt-PT", {
     minimumFractionDigits: 2,
@@ -154,7 +162,7 @@ function buildTransferOrderHtml(
       <div style="background:#faf8f5;border-radius:8px;border-left:3px solid #C4956A;padding:16px 20px;margin-bottom:24px">
         <p style="color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin:0 0 8px">Dados para Transferência</p>
         <p style="color:#1a1a1a;font-size:13px;line-height:1.8;margin:0">
-          <strong>IBAN:</strong> PT50 0000 0000 0000 0000 0000 0<br>
+          <strong>IBAN:</strong> ${escHtml(iban)}<br>
           <strong>Titular:</strong> Ana Alexandre<br>
           <strong>Referência:</strong> ARTE-${Date.now().toString(36).toUpperCase()}
         </p>

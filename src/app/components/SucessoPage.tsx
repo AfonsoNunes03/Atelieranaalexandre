@@ -11,13 +11,27 @@ const SLATE = "#64748B";
 export function SucessoPage() {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
+  const isPagamento = searchParams.has("session_id");
+  const isTransferencia = searchParams.has("transferencia");
 
-  // Limpa o carrinho quando vem de um pagamento Stripe (session_id no URL)
   useEffect(() => {
-    if (searchParams.get("session_id")) {
-      clearCart();
-    }
+    if (isPagamento) clearCart();
   }, []);
+
+  const titulo = isPagamento
+    ? "Pagamento confirmado!"
+    : isTransferencia
+    ? "Pedido recebido!"
+    : "Mensagem enviada com sucesso";
+
+  const subtitulo = isPagamento
+    ? "Receberás o recibo por email em breve."
+    : isTransferencia
+    ? "Vais receber os dados de transferência por email."
+    : "Obrigada pelo teu contacto. Responderei brevemente.";
+
+  const backTo = isTransferencia || isPagamento ? "/galeria" : "/contactos";
+  const backLabel = isTransferencia || isPagamento ? "Ver Galeria" : "Voltar aos contactos";
 
   return (
     <div style={{ background: CREAM, minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 24px" }}>
@@ -37,11 +51,11 @@ export function SucessoPage() {
           fontWeight: 400, color: CHARCOAL,
           margin: "0 0 16px", lineHeight: 1.2,
         }}>
-          Mensagem enviada com sucesso
+          {titulo}
         </h1>
 
         <p style={{ fontSize: "1rem", color: SLATE, lineHeight: 1.7, margin: "0 0 12px" }}>
-          Obrigada pelo teu contacto. Responderei brevemente.
+          {subtitulo}
         </p>
         <p style={{ fontSize: "0.88rem", color: SLATE, lineHeight: 1.6, margin: "0 0 40px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <Mail size={14} color={GOLD} strokeWidth={1.5} />
@@ -49,14 +63,14 @@ export function SucessoPage() {
         </p>
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link to="/contactos" style={{
+          <Link to={backTo} style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "10px 22px", borderRadius: 10,
             border: `1px solid ${GOLD}50`,
             color: GOLD, fontSize: "0.88rem", fontWeight: 500,
             textDecoration: "none", background: `${GOLD}10`,
           }}>
-            <ArrowLeft size={14} strokeWidth={2} /> Voltar aos contactos
+            <ArrowLeft size={14} strokeWidth={2} /> {backLabel}
           </Link>
           <Link to="/" style={{
             display: "inline-flex", alignItems: "center", gap: 8,

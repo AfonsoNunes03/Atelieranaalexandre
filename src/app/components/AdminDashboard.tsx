@@ -1,4 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { DashboardHome } from "./admin/sections/DashboardHome";
+import { ObrasSection } from "./admin/sections/ObrasSection";
+import VendasSection from "./admin/sections/VendasSection";
+import { MensagensSection } from "./admin/sections/MensagensSection";
+import { ConteudoSection } from "./admin/sections/ConteudoSection";
 import {
   Home, Image, ShoppingCart, Users, Mail, Settings,
   Plus, Edit2, Trash2, Bell, Search, LogOut, Eye,
@@ -7,6 +12,8 @@ import {
   Send, Palette, Globe, Lock, CreditCard, Save, RefreshCw,
   Sparkles, Menu, ChevronDown, MessageSquare, UserPlus,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "../../lib/auth";
 import {
   AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
@@ -488,20 +495,20 @@ function DeleteModal({ title, desc, onCancel, onConfirm }: {
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
-type Screen = "inicio"|"obras"|"encomendas"|"clientes"|"newsletter"|"definicoes";
+type Screen = "inicio"|"obras"|"encomendas"|"newsletter"|"definicoes";
 
 const NAV: { id: Screen; label: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }> }[] = [
   { id: "inicio",      label: "Início",     icon: Home         },
   { id: "obras",       label: "Obras",      icon: Image        },
   { id: "encomendas",  label: "Encomendas", icon: ShoppingCart },
-  { id: "clientes",    label: "Clientes",   icon: Users        },
-  { id: "newsletter",  label: "Newsletter", icon: Mail         },
+  { id: "newsletter",  label: "Mensagens",  icon: Mail         },
   { id: "definicoes",  label: "Definições", icon: Settings     },
 ];
 
 function Sidebar({ active, setActive, open, onClose }: {
   active: Screen; setActive: (s: Screen) => void; open: boolean; onClose: () => void;
 }) {
+  const navigate = useNavigate();
   const sidebarContent = (
     <aside style={{
       width: SIDEBAR_W, flexShrink: 0,
@@ -590,7 +597,22 @@ function Sidebar({ active, setActive, open, onClose }: {
             <div style={{ fontSize: "0.78rem", fontWeight: 600, color: CHARCOAL, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Ana Alexandre</div>
             <div style={{ fontSize: "0.62rem", color: SLATE_L }}>Administradora</div>
           </div>
-          <button style={{ background: "none", border: "none", cursor: "pointer", color: SLATE_L, padding: 2 }}>
+          <button
+            title="Ver website"
+            onClick={() => navigate("/")}
+            style={{ background: "none", border: "none", cursor: "pointer", color: SLATE_L, padding: 2, transition: "color 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.color = GOLD)}
+            onMouseLeave={e => (e.currentTarget.style.color = SLATE_L)}
+          >
+            <Globe size={14} strokeWidth={1.5} />
+          </button>
+          <button
+            title="Sair"
+            onClick={async () => { await signOut(); navigate("/login"); }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: SLATE_L, padding: 2, transition: "color 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#CC3333")}
+            onMouseLeave={e => (e.currentTarget.style.color = SLATE_L)}
+          >
             <LogOut size={14} strokeWidth={1.5} />
           </button>
         </div>
@@ -1640,12 +1662,12 @@ export function AdminDashboard() {
           onMenuClick={() => setSidebar(true)}
         />
         <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
-          {screen === "inicio"     && <InicioScreen setActive={handleSetScreen} />}
-          {screen === "obras"      && <ObrasScreen globalQ={globalQ} />}
-          {screen === "encomendas" && <EncomendasScreen globalQ={globalQ} />}
-          {screen === "clientes"   && <ClientesScreen globalQ={globalQ} />}
-          {screen === "newsletter" && <NewsletterScreen />}
-          {screen === "definicoes" && <DefinicoesScreen />}
+          {screen === "inicio"     && <DashboardHome />}
+          {screen === "obras"      && <ObrasSection globalSearch={globalQ} />}
+          {screen === "encomendas" && <VendasSection />}
+          {screen === "clientes"   && <MensagensSection />}
+          {screen === "newsletter" && <MensagensSection />}
+          {screen === "definicoes" && <ConteudoSection />}
         </div>
       </div>
 

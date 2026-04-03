@@ -1,504 +1,549 @@
-# Ana Alexandre Atelier — Checklist de Lançamento
-> Última atualização: 2026-04-01 | Stack: React/Vite + Supabase + Stripe + Vercel
-> Objetivo: **pronto para receber vendas reais**
+# Ana Alexandre Atelier — Checklist
+> Última atualização: 2026-04-02 | Stack: React/Vite + Supabase + Stripe + Vercel
+> Auditoria final v3: ficheiros lidos linha a linha. Discrepâncias críticas corrigidas.
+> Descobertas v3: react-hot-toast crash (VendasSection), schema_secure.sql perigoso, ficheiros obsoletos na raiz, imagens duplicadas em public/.
 
 ---
 
-## ✅ CONCLUÍDO — Não tocar
+## ESTADO REAL DO CÓDIGO — Antes de tocar em qualquer coisa
 
-### Core
-- [x] Galeria dinâmica com obras do Supabase (CRUD completo)
-- [x] Página de detalhe de obra
-- [x] Carrinho com contexto React
-- [x] Checkout com Stripe (cartão) e Transferência Bancária
-- [x] Admin protegido por Supabase Auth
-- [x] Admin: obras, conteúdo, mensagens, vendas
-- [x] Design Sepia/Gold/Creme com micro-animações
-- [x] Skeleton loaders e estados de loading
-- [x] i18n PT/EN/ES/FR com switcher no header
-- [x] SEO básico: meta tags, OG, Twitter Card, JSON-LD
-- [x] Páginas legais: Termos, Privacidade, Livro de Reclamações
-- [x] Cookie Consent banner (RGPD compliant)
-- [x] Newsletter com Supabase
-- [x] RLS em todas as tabelas (base)
-
-### Automação
-- [x] Edge Function `create-checkout-session` — Stripe real
-- [x] Edge Function `stripe-webhook` — webhook Stripe
-- [x] Edge Function `send-email` — emails via Resend
-- [x] Edge Function `notify-contacto` — notificação de contacto
-- [x] `src/lib/email.ts` — utilitário client-side seguro
-- [x] Sitemap dinâmico em `/sitemap.xml` (Vercel function)
-- [x] PWA: manifest.json + service worker
-
-### Infraestrutura
-- [x] `robots.txt` correto (`Disallow: /admin`, referência ao sitemap)
-- [x] Headers de segurança no `vercel.json` (X-Frame-Options, XSS, etc.)
-- [x] Cache imutável para assets estáticos
+| Ficheiro | Estado real encontrado |
+|---|---|
+| `routes.ts` | Tem 10 rotas. Faltam: `/register`, `/checkout`, `/termos`, `/privacidade`, `/reclamacoes`, `/sucesso`, `/carrinho` |
+| `LoginPage.tsx:525` | Link aponta para `/register` (não `/registar`) |
+| `LoginPage.tsx:101` | `handleSubmit` usa `setTimeout` — não chama `signIn()` |
+| `RegisterPage.tsx:138` | `handleSubmit` usa `setTimeout` — não chama `signUp()` |
+| `ContactosPage.tsx:220` | `handleSubmit` usa `setTimeout` — não chama `enviarContacto()`. **Sem import de db.ts** |
+| `Layout.tsx:762` | `handleNewsletter` é mock — não chama `subscribeNewsletter()`. **Sem import de db.ts** |
+| `VendasSection.tsx:19` | **`import toast from "react-hot-toast"` — biblioteca NÃO instalada → crash imediato ao abrir tab Vendas** |
+| `VendasSection.tsx:3` | Já usa `motion/react` ✓ — bug de framer-motion já não existe (item removido) |
+| `VendasSection.tsx:2` | Importa `supabase` diretamente — não usa `db.ts` |
+| `database.types.ts` | **Sem tipo `vendas`** — a tabela existe na BD mas não está tipada |
+| `db.ts:180` | `createVenda(venda: any)` — usa `any`, sem tipo |
+| `AdminDashboard.tsx` | Arrays `STATS`, `ORDERS`, `CLIENTES`, `OBRAS_INIT`, `NEWSLETTER_SUBS` hardcoded |
+| `ProtectedRoute.tsx:5` | `ADMIN_EMAIL` com fallback hardcoded `"atelier.anaalexandre@gmail.com"` |
+| `AdminProtected.tsx` | Existe e envolve `ProtectedRoute` — nunca ligado à rota `/admin` |
+| `vercel.json` | Tem 4 headers. **Sem CSP** |
+| `package.json` | Tem `"motion": "12.23.24"`. Sem `framer-motion`. `motion/react` funciona corretamente |
+| `package.json` | Tem `"react-router"` E `"react-router-dom"` instalados — redundância; só usar `react-router-dom` |
+| Páginas legais | `TermosPage`, `PrivacidadePage`, `ReclamacoesPage`, `SucessoPage`, `CarrinhoPage` — **ficheiros existem, sem rota** |
+| `supabase/schema_secure.sql` | **⚠️ PERIGOSO — hardcodes email admin em SQL RLS. NÃO EXECUTAR. Apagar.** |
+| `supabase/schema_dia1.sql` | Migração de sessão prévia — SQL já incorporado nos passos F1/F2. Apagar após executar F1/F2. |
+| `fix-imports.ps1` (raiz) | Script PowerShell obsoleto para corrigir imports antigos — apagar |
+| `nul` (raiz) | Ficheiro lixo criado por erro de Windows — apagar |
+| `SuccessPage.tsx` | Duplicado de `SucessoPage.tsx` — implementação incompleta. Apagar. |
+| `public/novo_01.jpg` + `public/novo_01.png` (×5 pares) | Pares jpg+png duplicados — apagar os `.png` redundantes |
+| `public/assets/*.png` (nomes de hash) | São assets do Figma mapeados em `vite.config.ts` — **NÃO apagar** |
 
 ---
 
-## 🔴 BLOQUEADORES — Não lançar sem isto
+## FLUXO DE AUTENTICAÇÃO — Como deve funcionar
 
-### 1. Bug que crasha o Admin
-- [ ] **`VendasSection` importa `framer-motion`** — o projeto usa `motion/react`. Admin crasha ao abrir vendas.
-  ```tsx
-  // Ficheiro: src/app/components/admin/sections/VendasSection.tsx linha 3
-  // Trocar:
-  import { motion, AnimatePresence } from "framer-motion";
-  // Por:
-  import { motion, AnimatePresence } from "motion/react";
-  ```
+```
+Visitante → vê tudo livremente
+  └── clica Comprar → RequireAuth deteta sem sessão
+        └── redireciona /login?redirect=/checkout
+              ├── Tem conta → signIn() → volta para /checkout
+              └── Não tem conta → link /register → signUp() → email de confirmação → /login
+Admin → /login → signIn() → email = VITE_ADMIN_EMAIL → /admin
+```
 
-### 2. Schema inconsistente — webhook falha silenciosamente
-- [ ] **`vendas.stripe_id` vs `stripe_session_id`** — o schema tem `stripe_id` mas o código e o webhook escrevem `stripe_session_id`. O webhook não guarda o ID da sessão Stripe.
-  ```sql
-  -- Executar no Supabase SQL Editor:
-  ALTER TABLE vendas RENAME COLUMN stripe_id TO stripe_session_id;
-  ALTER TABLE vendas ADD COLUMN IF NOT EXISTS metodo_pagamento text
-    DEFAULT 'transferencia'
-    CHECK (metodo_pagamento IN ('stripe', 'transferencia'));
-  ALTER TABLE vendas ADD COLUMN IF NOT EXISTS referencia text;
-  ```
-- [ ] **RLS `vendas` UPDATE em falta** — admin não consegue atualizar estado de vendas.
-  ```sql
-  CREATE POLICY "vendas_auth_update" ON vendas
-    FOR UPDATE USING (auth.role() = 'authenticated');
-  ```
+---
 
-### 3. Webhook não marca obras como vendidas
-- [ ] **`stripe-webhook`** — após pagamento confirmado, as obras NÃO passam para `vendido`. Resultado: obra aparece como disponível depois de vendida.
-  Adicionar em `supabase/functions/stripe-webhook/index.ts` após atualizar venda para 'pago':
+## PRIORIDADE 1 — Obrigatório para ir live
+
+> Executar EXATAMENTE nesta ordem. Dependências marcadas.
+
+---
+
+### GRUPO A — Arquitetura de Auth
+> Ordem obrigatória: A1 → A2 → A3 → A4.
+> A2 não pode ser feito sem A1. A3 não pode ser feito sem A2.
+
+**A1. Criar `RequireAuth` — novo ficheiro `src/app/components/RequireAuth.tsx`**
+- [ ] Verificar sessão com `getSession()` importado de `../../lib/auth`
+- [ ] Sem sessão → `<Navigate to={"/login?redirect=" + location.pathname} replace />`
+- [ ] Com sessão → renderizar `{children}`
+- [ ] Usar `useState("loading")` + `useEffect` com `getSession()`, igual ao padrão do `ProtectedRoute.tsx`
+- [ ] **Não tocar em `ProtectedRoute.tsx`** — esse fica só para admin
+
+**A2. Remover email hardcoded — `src/app/components/ProtectedRoute.tsx:5`**
+- [ ] Linha 5 atual: `const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "atelier.anaalexandre@gmail.com";`
+- [ ] Substituir por: `const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "";`
+- [ ] Adicionar ao `.env.local.example`: `VITE_ADMIN_EMAIL=`
+- [ ] **Só fazer depois de A1** — `ProtectedRoute` continua a funcionar, só sem o email em claro
+
+**A3. Ligar `/admin` ao `AdminProtected` — `src/app/routes.ts:15`**
+- [ ] Linha atual: `{ path: "/admin", Component: AdminDashboard }`
+- [ ] Substituir por: `{ path: "/admin", Component: AdminProtected }`
+- [ ] Adicionar import: `import { AdminProtected } from "./components/AdminProtected";`
+- [ ] Remover import de `AdminDashboard` do routes.ts (já está importado dentro de `AdminProtected`)
+- [ ] **Só fazer depois de A2**
+
+**A4. Proteger `/checkout` com `RequireAuth` — `src/app/routes.ts`**
+- [ ] Feito em conjunto com **C1** (único edit ao routes.ts)
+- [ ] **Só fazer depois de A1**
+
+---
+
+### GRUPO B — Formulários de Auth
+> Independentes. Não tocam nos mesmos ficheiros. Podem ser feitos em qualquer ordem.
+
+**B1. LoginPage — substituir mock por auth real — `src/app/components/LoginPage.tsx`**
+- [ ] Adicionar import no topo: `import { signIn } from "../../lib/auth";`
+- [ ] Linha 2 atual tem só `Link` de react-router-dom. **Substituir** por:
+  `import { Link, useNavigate, useLocation } from "react-router-dom";`
+- [ ] Substituir `handleSubmit` (linhas 101-108):
   ```typescript
-  const itemIds = vendaData?.items?.map((i: any) => i.id) ?? [];
-  if (itemIds.length > 0) {
-    await supabase.from("obras").update({ estado: "vendido" }).in("id", itemIds);
-  }
-  ```
-- [ ] **`stripe-webhook`** — adicionar handler `checkout.session.expired` para reverter obras de `reservado` para `disponivel` e venda para `cancelado`.
+  const navigate = useNavigate();
+  const location = useLocation();
+  const redirect = new URLSearchParams(location.search).get("redirect") ?? "/";
 
-### 4. Segurança — Registo público
-- [ ] **`RegisterPage` acessível publicamente** — qualquer pessoa pode criar conta e aceder ao admin.
-  Solução mais simples: remover a rota em `src/app/routes.ts`:
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await signIn(email, password);
+      navigate(redirect, { replace: true });
+    } catch {
+      setError("Email ou palavra-passe incorretos.");
+      setSubmitting(false);
+    }
+  };
+  ```
+- [ ] Adicionar estado `error` se não existir: `const [error, setError] = useState<string | null>(null);`
+- [ ] Mostrar `{error && <p style={{color:"red"}}>{error}</p>}` no JSX, antes do botão
+- [ ] Link na linha 525 aponta para `/register` — **manter assim** (rota será `/register` no C1)
+
+**B2. RegisterPage — substituir mock por auth real — `src/app/components/RegisterPage.tsx`**
+- [ ] Adicionar import no topo: `import { signUp } from "../../lib/auth";`
+- [ ] Substituir `handleSubmit` (linhas 138-146):
   ```typescript
-  // Apagar esta linha:
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordMismatch) return;
+    setSubmitting(true);
+    try {
+      await signUp(values.email, values.password, values.name);
+      setSubmitted(true); // mostra ecrã "Verifica o teu email"
+    } catch {
+      setError("Erro ao criar conta. Tenta novamente.");
+      setSubmitting(false);
+    }
+  };
+  ```
+- [ ] Adicionar estado `error` se não existir: `const [error, setError] = useState<string | null>(null);`
+- [ ] Mostrar `{error && <p style={{color:"red"}}>{error}</p>}` no JSX
+- [ ] O ecrã `submitted` já existe (linhas 256-303) — só alterar o texto para "Verifica o teu email para confirmar a conta."
+
+---
+
+### GRUPO C — Rotas (único edit ao routes.ts)
+> C1 é um único commit. Todas as rotas novas num só ficheiro, uma só vez.
+> Fazer A1 primeiro (RequireAuth tem de existir para o checkout).
+> ⚠️ CRÍTICO: `routes.ts` é `.ts` (não `.tsx`) — JSX inline não compila. Ver C0.
+
+**C0. Renomear `routes.ts` → `routes.tsx` — ANTES de C1**
+- [ ] Renomear o ficheiro: `src/app/routes.ts` → `src/app/routes.tsx`
+- [ ] `App.tsx` importa `from "./routes"` — TypeScript resolve `.tsx` automaticamente, **nenhuma alteração necessária em App.tsx**
+- [ ] Esta renomeação é obrigatória: o passo C1 adiciona JSX (`<RequireAuth>...`) e `.ts` não suporta JSX
+
+**C1. Todas as rotas em falta — `src/app/routes.tsx` (editar uma única vez, após C0)**
+- [ ] Adicionar imports no topo (verificar quais já existem):
+  ```typescript
+  import { RegisterPage } from "./components/RegisterPage";
+  import { TermosPage } from "./components/TermosPage";
+  import { PrivacidadePage } from "./components/PrivacidadePage";
+  import { ReclamacoesPage } from "./components/ReclamacoesPage";
+  import { SucessoPage } from "./components/SucessoPage";
+  import { CarrinhoPage } from "./components/CarrinhoPage";
+  import { CheckoutPage } from "./components/CheckoutPage";
+  import { RequireAuth } from "./components/RequireAuth";
+  ```
+- [ ] Adicionar rota `/register` fora do Layout (junto a `/login`):
+  ```typescript
   { path: "/register", Component: RegisterPage },
   ```
-  O registo de admins faz-se diretamente no Supabase Dashboard.
+  **Nota:** usar `/register` (não `/registar`) — é o caminho que `LoginPage.tsx:525` já usa
+- [ ] Adicionar rotas dentro do `children` do Layout:
+  ```typescript
+  { path: "termos", Component: TermosPage },
+  { path: "privacidade", Component: PrivacidadePage },
+  { path: "reclamacoes", Component: ReclamacoesPage },
+  { path: "sucesso", Component: SucessoPage },
+  { path: "carrinho", Component: CarrinhoPage },
+  {
+    path: "checkout",
+    element: (
+      <RequireAuth>
+        <CheckoutPage />
+      </RequireAuth>
+    ),
+  },
+  ```
+- [ ] Verificar que `{ path: "*", Component: HomePage }` continua como última entrada no `children`
+- [ ] Verificar links do footer em `Layout.tsx` apontam para `/termos`, `/privacidade`, `/reclamacoes`
 
-### 5. Vulnerabilidade na Newsletter
-- [ ] **`newsletter_public_update`** — qualquer pessoa pode desativar qualquer subscrição via API.
+---
+
+### GRUPO D — Formulários reais
+> D1 e D2 são independentes. Não tocam nos mesmos ficheiros.
+
+**D1. Contactos — `src/app/components/ContactosPage.tsx`**
+- [ ] Adicionar import no topo: `import { enviarContacto } from "../../lib/db";`
+- [ ] Adicionar estado de erro: `const [formError, setFormError] = useState<string | null>(null);`
+- [ ] Substituir `handleSubmit` (linhas 220-224):
+  ```typescript
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      await enviarContacto({
+        nome,
+        email,
+        telefone: telefone || null,
+        mensagem,
+        assunto: selectedIntention ?? "",
+      });
+      setFormSubmitted(true);
+    } catch {
+      setFormError("Erro ao enviar mensagem. Por favor tenta novamente.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  ```
+- [ ] Mostrar `{formError && <p>{formError}</p>}` no JSX antes do botão de submit
+
+**D2. Newsletter — `src/app/components/Layout.tsx`**
+- [ ] Adicionar import no topo (Layout não tem nenhum import de db.ts — verificado):
+  `import { subscribeNewsletter } from "../../lib/db";`
+  (Layout está em `src/app/components/` → db está em `src/lib/` → caminho: `../../lib/db`)
+- [ ] Adicionar estado de erro: `const [newsletterError, setNewsletterError] = useState<string | null>(null);`
+- [ ] Substituir `handleNewsletter` (linhas 762-765):
+  ```typescript
+  const handleNewsletter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    try {
+      await subscribeNewsletter(newsletterEmail);
+      setNewsletterSent(true);
+    } catch {
+      setNewsletterError("Erro ao subscrever. Tenta novamente.");
+    }
+  };
+  ```
+- [ ] Mostrar `{newsletterError && <p>{newsletterError}</p>}` no JSX perto do formulário
+
+---
+
+### GRUPO E — Segurança de Deploy
+> Independentes entre si. Fazer antes do primeiro push para produção.
+
+**E1. Verificar `.env.local` no histórico git**
+- [ ] Correr: `git log --all --full-history -- .env.local`
+- [ ] Se aparecer commits: rodar chaves no painel Supabase e Stripe imediatamente
+- [ ] Confirmar `.gitignore` tem linha `.env.local`
+
+**E2. CORS nas Edge Functions**
+- [ ] `supabase/functions/create-checkout-session/index.ts` — substituir `"*"`:
+  ```typescript
+  const ALLOWED_ORIGINS = ["https://atelieranaalexandre.pt", "http://localhost:5173"];
+  const origin = req.headers.get("origin") ?? "";
+  const corsOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  // usar corsOrigin em vez de "*" no header
+  ```
+- [ ] Repetir para `supabase/functions/send-email/index.ts`
+- [ ] Repetir para `supabase/functions/notify-contacto/index.ts`
+
+**E3. Newsletter RLS — Supabase SQL Editor**
+- [ ] Executar (fix à policy que permite qualquer pessoa desativar subscrições alheias):
   ```sql
   DROP POLICY IF EXISTS "newsletter_public_update" ON newsletter;
   CREATE POLICY "newsletter_auth_update" ON newsletter
     FOR UPDATE USING (auth.role() = 'authenticated');
   ```
 
-### 6. IBAN placeholder nos emails
-- [ ] **`supabase/functions/send-email/index.ts`** — o IBAN nos emails de transferência é um placeholder `PT50 0000...`. Substituir por variável de ambiente:
-  ```typescript
-  const iban = Deno.env.get("IBAN_ATELIER") ?? "IBAN não configurado";
+---
+
+### GRUPO F — Schema da Base de Dados
+> Ordem obrigatória: F1 → F2 → F3. F3 (webhook) depende de F1+F2.
+
+**F1. Corrigir schema `vendas` — Supabase SQL Editor**
+- [ ] Executar (idempotente — pode correr várias vezes sem dano):
+  ```sql
+  DO $$ BEGIN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name = 'vendas' AND column_name = 'stripe_id'
+    ) THEN
+      ALTER TABLE vendas RENAME COLUMN stripe_id TO stripe_session_id;
+    END IF;
+  END $$;
+  ALTER TABLE vendas
+    ADD COLUMN IF NOT EXISTS metodo_pagamento text
+      DEFAULT 'transferencia'
+      CHECK (metodo_pagamento IN ('stripe', 'transferencia')),
+    ADD COLUMN IF NOT EXISTS referencia text;
   ```
-  E configurar o secret:
+- [ ] Após executar, regenerar tipos TypeScript:
   ```bash
-  npx supabase secrets set IBAN_ATELIER=PT50xxxx...
+  npx supabase gen types typescript --project-id <SEU_PROJECT_ID> \
+    > src/lib/database.types.ts
+  ```
+- [ ] Confirmar que `database.types.ts` passa a ter a tabela `vendas` tipada
+- [ ] Em `src/lib/db.ts`: substituir `createVenda(venda: any)` pelo tipo gerado:
+  ```typescript
+  type VendaInsert = Database["public"]["Tables"]["vendas"]["Insert"];
+  export async function createVenda(venda: VendaInsert): Promise<string | null> { ... }
   ```
 
-### 7. Validação de stock em falta
-- [ ] **Checkout sem verificação de disponibilidade** — é possível comprar uma obra que já foi vendida (race condition ou carrinho antigo). Adicionar em `CheckoutPage.tsx` antes do `handleSubmit`:
+**F2. Adicionar RLS UPDATE na tabela `vendas` — Supabase SQL Editor**
+- [ ] **Só depois de F1**
+  ```sql
+  DROP POLICY IF EXISTS "vendas_auth_update" ON vendas;
+  CREATE POLICY "vendas_auth_update" ON vendas
+    FOR UPDATE USING (auth.role() = 'authenticated');
+  ```
+
+**F3. Corrigir webhook Stripe — `supabase/functions/stripe-webhook/index.ts`**
+- [ ] **Só depois de F1+F2**
+- [ ] Substituir referência à coluna de `stripe_id` por `stripe_session_id` (nome correto após F1)
+- [ ] Após marcar venda como `pago`, marcar obras como vendidas:
   ```typescript
-  // Verificar que todas as obras ainda estão 'disponivel'
-  const { data: obrasAtuais } = await supabase
-    .from("obras").select("id, estado").in("id", items.map(i => i.id));
-  const vendidas = obrasAtuais?.filter(o => o.estado !== "disponivel") ?? [];
-  if (vendidas.length > 0) {
-    setError("Uma ou mais obras já não estão disponíveis.");
-    return;
+  const itemIds: string[] = (vendaData?.items ?? []).map((i: { id: string }) => i.id);
+  if (itemIds.length > 0) {
+    await supabase.from("obras").update({ estado: "vendido" }).in("id", itemIds);
   }
   ```
-
-### 8. SucessoPage com texto errado
-- [ ] **`SucessoPage`** — mostra "Mensagem enviada com sucesso" para pagamentos. Corrigir para diferenciar contextos:
-  - Com `?session_id=` no URL → "Pagamento confirmado! Vais receber o recibo por email."
-  - Sem `session_id` → "Pedido recebido! Vais receber os dados de transferência por email."
-
----
-
-## 🟡 IMPORTANTE — Fazer antes de promover o site
-
-### Admin — Completar funcionalidades prometidas
-- [ ] **`VendasSection`** — mostrar coluna "Método" (💳 Stripe / 🏦 Transferência) — dados existem, só falta mostrar.
-- [ ] **`VendasSection`** — botão "Confirmar Pagamento" para vendas por transferência (muda estado pendente→pago, envia email ao cliente).
-- [ ] **`ConteudoSection`** — IBAN editável pelo admin via `config_site` (chave `iban_atelier`).
-
-### Galeria & UX
-- [ ] **Routing por slug** — `ObraPage` usa UUID no URL. Mudar para `/galeria/:slug` (slug já existe na DB, `getObraBySlug()` já existe em `db.ts`).
-- [ ] **Carrinho sem persistência** — perde-se ao fechar o browser. Guardar em `localStorage` em `src/lib/cart.tsx`.
-- [ ] **Filtros na galeria** — por técnica e estado (disponível/vendido). Evita frustrações de clientes a tentar comprar obras já vendidas.
-
-### Performance mínima
-- [ ] **Code splitting por rota** — `React.lazy()` em todas as páginas de `routes.ts`. Reduz bundle inicial (crítico: `@mui/material` carrega tudo).
-- [ ] **Lazy loading de imagens** — `loading="lazy"` em todas as `<img>` da galeria.
+- [ ] Adicionar handler para `checkout.session.expired`:
+  ```typescript
+  case "checkout.session.expired": {
+    const session = event.data.object;
+    const { data: venda } = await supabase
+      .from("vendas")
+      .select("id, items")
+      .eq("stripe_session_id", session.id)
+      .single();
+    if (venda) {
+      const ids = (venda.items ?? []).map((i: { id: string }) => i.id);
+      if (ids.length > 0) {
+        await supabase.from("obras").update({ estado: "disponivel" }).in("id", ids);
+      }
+      await supabase.from("vendas").update({ estado: "cancelado" }).eq("id", venda.id);
+    }
+    break;
+  }
+  ```
+- [ ] Deploy: `npx supabase functions deploy stripe-webhook`
 
 ---
 
-## 🟡 SEGURANÇA ADICIONAL (antes de produção)
+### GRUPO G — Bugs e Conteúdo
+> Independentes entre si. Sem dependências de outros grupos.
 
-- [ ] **`obras` write scope** — qualquer utilizador autenticado pode criar/editar obras, não só admins. Criar tabela `admin_users` ou usar service role nas edge functions.
-- [ ] **`send-email` sem validação** — edge function aceita qualquer email como destinatário (risco de relay). Adicionar validação de formato e comparação com `customerEmail` da venda.
-- [ ] **Validação Stripe return** — `SucessoPage` com `?session_id=` devia verificar o session server-side antes de mostrar sucesso.
-- [ ] **Rate limiting** — sem proteção em `contactos` e `newsletter` contra spam. Supabase não limita inserções por defeito.
+**G0. ⚠️ CRASH — Substituir `react-hot-toast` em `src/app/components/admin/sections/VendasSection.tsx`**
+- [ ] **Problema**: linha 19 importa `import toast from "react-hot-toast"` mas `react-hot-toast` **não está em package.json** → crash ao abrir tab Vendas no admin
+- [ ] O projeto usa `src/lib/toast.ts` como sistema de toasts próprio OU shadcn `sonner`
+- [ ] Verificar qual sistema de toast está em uso nas outras páginas admin (`ObrasSection`, `DashboardHome`)
+- [ ] Substituir a linha de import por:
+  ```typescript
+  import { useToast } from "@/hooks/use-toast"; // se shadcn sonner
+  // OU
+  import { showToast } from "../../lib/toast"; // se toast custom
+  ```
+- [ ] Substituir todas as chamadas `toast("...")` pelo equivalente do sistema escolhido
+- [ ] Confirmar `npm run build` sem erros após a alteração
 
----
+**G1. IBAN hardcoded nos emails — `supabase/functions/send-email/index.ts`**
+- [ ] Localizar linha com `PT50 0000...` e substituir por:
+  ```typescript
+  const iban = Deno.env.get("IBAN_ATELIER") ?? "Contactar atelier para dados bancários";
+  ```
+- [ ] Configurar secret: `npx supabase secrets set IBAN_ATELIER=PT50...`
+- [ ] Deploy: `npx supabase functions deploy send-email`
 
-## 🟢 PÓS-LANÇAMENTO — Depois de estar a vender
-
-### Pagamentos avançados
-- [ ] **MB WAY via Stripe** — `payment_method_types: ["mb_way"]` na `create-checkout-session`.
-- [ ] **Stripe Customer** — criar/associar `stripe_customer_id` para histórico do cliente.
-- [ ] **Reembolsos** — botão no admin (VendasSection) que chama Stripe refund API.
-- [ ] **Stripe automatic tax** — IVA 23% Portugal.
-- [ ] **Referência única de venda** — ex: `ANA-2026-001` em `vendas.referencia`.
-
-### Admin Premium
-- [ ] **Gráfico de vendas** — receita por mês com Recharts (já instalado).
-- [ ] **Drag-and-drop obras** — reordenação com react-dnd (já instalado).
-- [ ] **Secção "Membros"** — lista de clientes com histórico de compras.
-- [ ] **Secção "Settings"** — IBAN, redes sociais, exportar CSV, modo manutenção.
-- [ ] **Newsletter broadcast** — envio de email a todos os subscritos via Resend.
-- [ ] **Múltiplas imagens por obra** — galeria de 3-5 fotos.
-- [ ] **Bulk actions** — marcar múltiplas obras em lote.
-
-### SEO & Analytics
-- [ ] **Vercel Analytics** — `npm install @vercel/analytics` + `<Analytics />` em `main.tsx`.
-- [ ] **Vercel Speed Insights** — `npm install @vercel/speed-insights`.
-- [ ] **JSON-LD `Product`** por obra — preço e disponibilidade para Google Shopping.
-- [ ] **Imagens WebP** — `?width=800&format=webp` nas URLs do Supabase Storage.
-- [ ] **Bundle analysis** — `rollup-plugin-visualizer` para identificar imports pesados.
-
-### UX
-- [ ] **Lightbox** — zoom fullscreen ao clicar na imagem da obra.
-- [ ] **Página 404** — design coerente, link para galeria.
-- [ ] **Páginas mencionadas no footer** — `/exposicoes`, `/workshops`, `/faq`.
-- [ ] **Abandonos de carrinho** — email automático após 24h.
-- [ ] **Lista de espera** — quando obra está vendida, formulário para entrar na lista.
-- [ ] **Certificado de autenticidade** — PDF gerado automaticamente com a compra.
-
-### PWA
-- [ ] **Ícones PWA em falta** — criar `public/icons/icon-192.png` e `public/icons/icon-512.png`. Sem eles o "Instalar App" não funciona.
-
----
-
-## 🧹 LIMPEZA — Ficheiros para remover
-
-- [ ] `src/app/components/SuccessPage.tsx` — ficheiro duplicado/não usado. As rotas apontam para `SucessoPage.tsx`.
-- [ ] `diagnose.mjs` na raiz — script de debug temporário.
-- [ ] `check_db.js` na raiz — script de debug temporário.
-- [ ] `nul` na raiz — ficheiro criado por erro do Windows (`> nul`).
-
----
-
-## 📋 ESTADO ATUAL — Resumo Executivo
-
-| Área | Estado | Bloqueador? |
-|---|---|---|
-| Admin (VendasSection) | ❌ Crasha — import errado | **SIM** |
-| Webhook Stripe | ❌ Não marca obras como vendidas | **SIM** |
-| Schema BD | ❌ stripe_id ≠ stripe_session_id | **SIM** |
-| RLS newsletter | ❌ Abuso possível | **SIM** |
-| Registo público | ❌ Qualquer pessoa cria admin | **SIM** |
-| IBAN nos emails | ❌ Placeholder | **SIM** |
-| Validação stock | ❌ Pode vender obra já vendida | **SIM** |
-| SucessoPage | ⚠️ Texto genérico | Não, mas confuso |
-| Carrinho persistência | ⚠️ Perde ao fechar browser | Não |
-| Slug routing | ⚠️ URLs com UUID | Não |
-| PWA ícones | ❌ public/icons/ não existe | Não (PWA não instala) |
-| Ficheiros debug | ⚠️ diagnose.mjs, check_db.js, nul | Não |
-
----
-
-## 🎯 ORDEM DE EXECUÇÃO (para lançar)
-
-```
-DIA 1 — Bugs e segurança (1-2h):
-  1. Corrigir import framer-motion → motion/react (VendasSection)
-  2. Remover rota /register
-  3. SQL: renomear stripe_id, adicionar metodo_pagamento, corrigir RLS
-  4. Remover ficheiros debug da raiz
-
-DIA 2 — Pagamentos (2-3h):
-  5. Stripe webhook: marcar obras como 'vendido' após pagamento
-  6. Stripe webhook: handler checkout.session.expired
-  7. IBAN: mover para variável de ambiente Supabase
-  8. Checkout: validação de stock antes de pagar
-  9. SucessoPage: texto contextual
-
-DIA 3 — Polimento (1-2h):
-  10. VendasSection: mostrar método de pagamento
-  11. Carrinho: persistência em localStorage
-  12. Imagens: loading="lazy" em toda a galeria
-  13. Criar ícones PWA (192px e 512px)
-```
-
----
-
----
-
-## 🤖 PROMPTS DE TRABALHO — Copiar e colar para iniciar cada sessão
-
-> Cada prompt instrui o agente a usar os plugins certos automaticamente.
-> Ordem recomendada: DIA 1 → DIA 2 → DIA 3.
-> **Antes de cada prompt:** abrir uma nova sessão Claude Code na pasta do projeto.
-
----
-
-### PROMPT DIA 1 — Bugs Críticos & Segurança
-
-```
-Projeto: Ana Alexandre Atelier — React/Vite + Supabase + Stripe + Vercel.
-Lê 'prompt/checklist.md' (secção 🔴 BLOQUEADORES) para contexto completo.
-
-Usa o skill superpowers:systematic-debugging para diagnosticar cada problema
-antes de o corrigir. Usa superpowers:test-driven-development em qualquer
-código novo. Usa superpowers:verification-before-completion antes de marcar
-cada tarefa como concluída.
-
-Faz estas correções pela ordem indicada:
-
-## 1. BUG CRÍTICO — Admin crasha (2 min)
-Ficheiro: src/app/components/admin/sections/VendasSection.tsx linha 3
-Trocar:  import { motion, AnimatePresence } from "framer-motion";
-Por:     import { motion, AnimatePresence } from "motion/react";
-Verificar: npm run build deve completar sem erros.
-
-## 2. SEGURANÇA — Remover registo público (2 min)
-Ficheiro: src/app/routes.ts
-Remover a linha: { path: "/register", Component: RegisterPage },
-Remover também o import: import { RegisterPage } from "./components/RegisterPage";
-Verificar: navegar para /register no browser deve redirecionar para /
-
-## 3. SQL — Corrigir schema (10 min)
-Criar ficheiro: supabase/schema_dia1.sql com este conteúdo idempotente:
-
--- Corrigir coluna stripe_id → stripe_session_id
-DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns
-    WHERE table_name='vendas' AND column_name='stripe_id') THEN
-    ALTER TABLE vendas RENAME COLUMN stripe_id TO stripe_session_id;
-  END IF;
-END $$;
-
--- Adicionar colunas em falta
-ALTER TABLE vendas ADD COLUMN IF NOT EXISTS metodo_pagamento text
-  DEFAULT 'transferencia'
-  CHECK (metodo_pagamento IN ('stripe', 'transferencia'));
-ALTER TABLE vendas ADD COLUMN IF NOT EXISTS referencia text;
-
--- RLS: admin pode atualizar vendas
-DROP POLICY IF EXISTS "vendas_auth_update" ON vendas;
-CREATE POLICY "vendas_auth_update" ON vendas
-  FOR UPDATE USING (auth.role() = 'authenticated');
-
--- Corrigir newsletter: remover policy aberta
-DROP POLICY IF EXISTS "newsletter_public_update" ON newsletter;
-DROP POLICY IF EXISTS "newsletter_auth_update" ON newsletter;
-CREATE POLICY "newsletter_auth_update" ON newsletter
-  FOR UPDATE USING (auth.role() = 'authenticated');
-
-Executar no Supabase SQL Editor (Dashboard > SQL Editor).
-Verificar: tabela vendas tem coluna stripe_session_id e metodo_pagamento.
-
-## 4. LIMPEZA — Remover ficheiros de debug (2 min)
-Apagar da raiz: diagnose.mjs, check_db.js, nul
-Verificar: git status não mostra estes ficheiros.
-
-Usa superpowers:verification-before-completion no final.
-Commit com mensagem: "fix: corrigir bugs críticos e segurança dia 1"
-```
-
----
-
-### PROMPT DIA 2 — Pagamentos & Fluxo de Compra
-
-```
-Projeto: Ana Alexandre Atelier — React/Vite + Supabase + Stripe + Vercel.
-Lê 'prompt/checklist.md' (secção 🔴 BLOQUEADORES itens 6-8) para contexto.
-O DIA 1 foi concluído — admin funciona, schema corrigido, /register removido.
-
-Usa superpowers:systematic-debugging para analisar cada edge function antes
-de a modificar. Usa superpowers:test-driven-development para código novo.
-Para edge functions Supabase/Stripe, usa stripe:stripe-best-practices.
-Usa superpowers:verification-before-completion antes de cada commit.
-
-## 1. IBAN — Variável de ambiente (5 min)
-Ficheiro: supabase/functions/send-email/index.ts
-Localizar a linha com o IBAN hardcoded (ex: "PT50 0000...")
-Substituir por: const iban = Deno.env.get("IBAN_ATELIER") ?? "Contactar atelier para dados bancários";
-Configurar secret: npx supabase secrets set IBAN_ATELIER=<IBAN_REAL>
-Verificar: fazer um pedido de transferência de teste e confirmar que o email tem o IBAN correto.
-
-## 2. WEBHOOK — Marcar obras como vendidas (20 min)
-Ficheiro: supabase/functions/stripe-webhook/index.ts
-Localizar o handler do evento "checkout.session.completed".
-Após atualizar venda.estado para 'pago', adicionar:
-  - Buscar os item IDs da venda: const itemIds = vendaData?.items?.map(i => i.id) ?? [];
-  - Atualizar: await supabase.from("obras").update({ estado: "vendido" }).in("id", itemIds);
-  - Guardar stripe_session_id: await supabase.from("vendas").update({ stripe_session_id: session.id }).eq("id", vendaId);
-Adicionar novo handler "checkout.session.expired":
-  - Buscar venda por stripe_session_id
-  - Atualizar obras para 'disponivel' e venda para 'cancelado'
-Usar SUPABASE_SERVICE_ROLE_KEY para bypass de RLS no webhook.
-Verificar com: stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook
-Deploy: npx supabase functions deploy stripe-webhook
-
-## 3. CHECKOUT — Validação de stock (15 min)
-Ficheiro: src/app/components/CheckoutPage.tsx
-Na função handleSubmit, ANTES de createVenda(), adicionar:
+**G2. Checkout sem validação de stock — `src/app/components/CheckoutPage.tsx`**
+- [ ] `CheckoutPage` NÃO importa supabase diretamente (confirmado) — adicionar import:
+  `import { supabase } from "../../lib/supabase";`
+- [ ] Estado de loading confirmado: `setSending` (linha 26: `const [sending, setSending] = useState(false)`)
+- [ ] No início de `handleSubmit`, **antes** de `createVenda()`, inserir:
+  ```typescript
   const { data: obrasAtuais } = await supabase
-    .from("obras").select("id, titulo, estado").in("id", items.map(i => i.id));
+    .from("obras")
+    .select("id, titulo, estado")
+    .in("id", items.map(i => i.id));
   const indisponiveis = (obrasAtuais ?? []).filter(o => o.estado !== "disponivel");
   if (indisponiveis.length > 0) {
     setError(`"${indisponiveis[0].titulo}" já não está disponível. Atualiza o carrinho.`);
     setSending(false);
     return;
   }
-Verificar: tentar comprar obra com estado='vendido' deve mostrar erro claro.
+  ```
 
-## 4. SUCESSO PAGE — Texto contextual (10 min)
-Ficheiro: src/app/components/SucessoPage.tsx
-Alterar o conteúdo consoante searchParams.get("session_id"):
-  - Com session_id: título "Pagamento confirmado!" + "Receberás o recibo por email."
-  - Sem session_id: título "Pedido recebido!" + "Vais receber os dados de transferência por email."
-Manter o design Gold/Creme existente.
-Verificar: testar ambos os URLs (/sucesso e /sucesso?session_id=test).
+**G3. SucessoPage texto errado — `src/app/components/SucessoPage.tsx`**
+- [ ] `useSearchParams` já está importado (linha 2) ✓
+- [ ] `const [searchParams] = useSearchParams()` já existe (linha 12) ✓
+- [ ] **Apenas adicionar** a lógica condicional no JSX (o hook já está lá):
+  ```typescript
+  const isPagamento = searchParams.has("session_id");
+  // título: isPagamento ? "Pagamento confirmado!" : "Pedido recebido!"
+  // sub: isPagamento
+  //   ? "Receberás o recibo por email em breve."
+  //   : "Vais receber os dados de transferência por email."
+  ```
+  Não duplicar nenhum import — só alterar o texto renderizado
 
-Usa superpowers:verification-before-completion no final de cada tarefa.
-Deploy das edge functions: npx supabase functions deploy stripe-webhook
-Commit: "feat: fluxo de pagamento completo e robusto"
-```
-
----
-
-### PROMPT DIA 3 — Polimento & UX
-
-```
-Projeto: Ana Alexandre Atelier — React/Vite + Supabase + Stripe + Vercel.
-Lê 'prompt/checklist.md' (secção 🟡 IMPORTANTE) para contexto.
-Os Dias 1 e 2 foram concluídos — pagamentos funcionam correctamente.
-
-Usa superpowers:brainstorming se precisares de tomar decisões de UX/design.
-Para componentes React, segue vercel:react-best-practices.
-Para UI nova, usa frontend-design:frontend-design.
-Usa superpowers:verification-before-completion antes de cada commit.
-
-## 1. ADMIN — Método de pagamento em VendasSection (15 min)
-Ficheiro: src/app/components/admin/sections/VendasSection.tsx
-Adicionar coluna "Método" à tabela de vendas:
-  - 💳 Cartão/Stripe (quando metodo_pagamento === 'stripe')
-  - 🏦 Transferência (quando metodo_pagamento === 'transferencia' ou null)
-Adicionar badge de estado colorido: pendente (amarelo), pago (verde), enviado (azul), cancelado (vermelho).
-Manter o design admin existente (branco + gold).
-Verificar: abrir admin > Vendas e confirmar que a coluna aparece.
-
-## 2. CARRINHO — Persistência em localStorage (20 min)
-Ficheiro: src/lib/cart.tsx
-No useEffect de inicialização do contexto, carregar carrinho de localStorage:
-  const saved = localStorage.getItem("aa_cart");
-  if (saved) { try { setItems(JSON.parse(saved)); } catch {} }
-Em cada alteração ao carrinho (addItem, removeItem, clearCart), persistir:
-  localStorage.setItem("aa_cart", JSON.stringify(items));
-Ao restaurar do localStorage, verificar via Supabase se as obras ainda estão disponíveis.
-Verificar: adicionar obra ao carrinho, fechar browser, reabrir — carrinho deve persistir.
-
-## 3. GALERIA — Lazy loading de imagens (10 min)
-Ficheiros: src/app/components/GaleriaPage.tsx, ObraPage.tsx, CurvedCarousel.tsx
-Em todas as tags <img> de obras, adicionar:
-  loading="lazy"
-  decoding="async"
-  style={{ aspectRatio: "3/4" }}  (ou ratio adequado)
-Verificar com DevTools: imagens fora do viewport não devem carregar no page load.
-
-## 4. CODE SPLITTING — Rotas lazy (15 min)
-Ficheiro: src/app/routes.ts
-Converter todos os imports de páginas para React.lazy():
-  const GaleriaPage = lazy(() => import("./components/GaleriaPage").then(m => ({ default: m.GaleriaPage })));
-  (repetir para ObraPage, SobrePage, MentoriaPage, ContactosPage, PremioPage, etc.)
-Envolver o router com <Suspense fallback={<SkeletonCard />}> em App.tsx ou main.tsx.
-Manter AdminDashboard com lazy (já tem).
-Verificar: npm run build deve gerar chunks separados por página.
-
-## 5. ÍCONES PWA (5 min)
-Criar pasta: public/icons/
-Criar dois ficheiros: icon-192.png e icon-512.png
-  (usar uma imagem do logo do atelier, redimensionar para 192x192 e 512x512)
-Verificar: manifest.json já referencia /icons/icon-192.png e /icons/icon-512.png.
-
-## 6. DEPLOY FINAL
-npm run build (verificar 0 erros)
-npx supabase functions deploy --all
-Commit: "feat: polimento ux e performance para lançamento"
-Verificar com superpowers:verification-before-completion antes do deploy.
-```
+**G4. Ficheiros públicos em falta — criar em `public/`**
+- [ ] `public/favicon.png` — ícone do browser (referenciado em `index.html`)
+- [ ] `public/apple-touch-icon.png` — ícone iOS (referenciado em `index.html`)
+- [ ] `public/og-image.jpg` — imagem das partilhas sociais (referenciado nos meta tags)
+- [ ] `public/icons/icon-192.png` — ícone PWA (referenciado em `manifest.json`)
+- [ ] `public/icons/icon-512.png` — ícone PWA (referenciado em `manifest.json`)
 
 ---
 
-### PROMPT PÓS-LANÇAMENTO — Primeira semana a vender
+### GRUPO H — Limpeza final
+> Só fazer depois de tudo testado e funcional.
 
-```
-Projeto: Ana Alexandre Atelier — em produção. Lê 'prompt/checklist.md'
-(secção 🟡 PÓS-LANÇAMENTO) para ver o que vem a seguir.
-
-Os 3 dias de lançamento foram concluídos. Foco agora em analytics e admin.
-
-Usa superpowers:brainstorming antes de qualquer funcionalidade nova.
-Usa superpowers:writing-plans para planear cada feature antes de implementar.
-Usa superpowers:subagent-driven-development para execução.
-
-## Próximas prioridades (escolher uma):
-
-A) ANALYTICS — ver quantas pessoas visitam e o que fazem
-   - npm install @vercel/analytics @vercel/speed-insights
-   - Adicionar <Analytics /> e <SpeedInsights /> em src/main.tsx
-   - Dashboard Vercel: vercel.com/analytics
-
-B) ADMIN — confirmar pagamentos por transferência
-   - VendasSection: botão "Confirmar Pagamento" (muda pendente→pago)
-   - Enviar email de confirmação ao cliente via send-email edge function
-   - Mostrar referência única da venda (ANA-YYYY-NNN)
-
-C) GALERIA — routing por slug e filtros
-   - ObraPage: detetar se param é UUID ou slug, chamar função certa
-   - GaleriaPage: filtros por técnica e estado (disponível/vendido)
-   - URLs amigáveis: /galeria/paisagem-alentejana em vez de /galeria/uuid
-
-Indica qual escolhes e o agente planeia e executa.
-```
+- [ ] **H1.** Apagar da raiz: `diagnose.mjs`, `check_db.js`, `nul`, `fix-imports.ps1`
+- [ ] **H2.** Apagar `src/app/components/SuccessPage.tsx` — duplicado incompleto; `SucessoPage.tsx` é o correto (já nas rotas)
+- [ ] **H3.** Atualizar `.env.local.example` com: `VITE_ADMIN_EMAIL=`, `VITE_RESEND_API_KEY=re_...`
+  Nota: `STRIPE_SECRET_KEY` vai para Supabase secrets — nunca exposto no frontend
+- [ ] **H4.** Apagar `supabase/schema_secure.sql` — **perigoso**: hardcodes `atelier.anaalexandre@gmail.com` em políticas RLS SQL. Se executado, bloqueia toda a escrita na BD a um email literal. O ficheiro `schema_secure.sql` não deve existir no repo.
+- [ ] **H5.** Apagar `supabase/schema_dia1.sql` — **só após F1+F2 terem sido executados no Supabase**. O SQL deste ficheiro já está incorporado nos passos F1 e F2 do checklist.
+- [ ] **H6.** Imagens duplicadas em `public/` — apagar os `.png` redundantes (manter `.jpg`):
+  `public/novo_01.png`, `public/novo_02.png`, `public/novo_03.png`, `public/novo_04.png`, `public/novo_05.png`
+  ⚠️ **NÃO apagar** `public/assets/*.png` — são assets Figma mapeados em `vite.config.ts`
+- [ ] **H7.** Confirmar que `package.json` não tem `"react-router"` e `"react-router-dom"` simultaneamente — remover `"react-router"` se `react-router-dom` estiver a funcionar
 
 ---
 
-## ⚙️ COMANDOS ESSENCIAIS
+## PRIORIDADE 2 — Corrigir logo após o lançamento
+
+### Admin com dados reais
+
+**Criar funções em `src/lib/db.ts`** (fazer depois de F1 — tipos têm de estar gerados):
+- [ ] Adicionar `getVendasAdmin()`:
+  ```typescript
+  export async function getVendasAdmin() {
+    const { data, error } = await supabase
+      .from("vendas").select("*").order("created_at", { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+  ```
+- [ ] Adicionar `updateVendaEstado()`:
+  ```typescript
+  export async function updateVendaEstado(
+    id: string,
+    estado: "pendente" | "pago" | "enviado" | "cancelado"
+  ) {
+    const { error } = await supabase.from("vendas").update({ estado }).eq("id", id);
+    if (error) throw error;
+  }
+  ```
+
+**Refatorar `VendasSection.tsx`** (depois de criar as funções acima):
+- [ ] Substituir import `supabase` por `getVendasAdmin` e `updateVendaEstado` de `db.ts`
+- [ ] Remover interface `Venda` local — usar o tipo gerado de `database.types.ts`
+- [ ] Adicionar coluna "Método" (💳 Stripe / 🏦 Transferência)
+- [ ] Adicionar botão "Confirmar Pagamento" para transferências
+
+**AdminDashboard — substituir mock data**:
+- [ ] Remover arrays `STATS`, `ORDERS`, `ALL_ORDERS`, `CLIENTES`, `OBRAS_INIT`, `NEWSLETTER_SUBS`
+- [ ] `DashboardHome` já usa `getStatsAdmin()` — garantir que é o único source de dados
+- [ ] Obras → `getObras()` | Newsletter → `getNewsletterAdmin()` | Vendas → `getVendasAdmin()`
+- [ ] Remover tab "Membros" do `AdminSidebar` (sem secção correspondente)
+
+### Sistema de Toasts — Unificar (após G0)
+
+O projeto tem 3 implementações em conflito:
+- `src/lib/toast.ts` — toast customizado próprio
+- `src/components/ui/sonner.tsx` — shadcn Sonner
+- `react-hot-toast` — referenciado em VendasSection mas **não instalado**
+
+- [ ] Escolher UM sistema (recomendado: shadcn Sonner — já instalado)
+- [ ] Substituir todas as chamadas de toast em todo o projeto pelo sistema escolhido
+- [ ] Apagar os ficheiros dos sistemas não utilizados
+
+---
+
+### UX — Experiência incompleta
+
+- [ ] **Página 404** — criar `src/app/components/NotFoundPage.tsx` e substituir `{ path: "*", Component: HomePage }` em `routes.ts`
+- [ ] **Error Boundary** — criar `src/app/components/ErrorBoundary.tsx` e envolver `<RouterProvider>` em `App.tsx`
+- [ ] **Toast ao adicionar ao carrinho** — `ObraPage.tsx`: após `addToCart()`, usar `ToastContainer` já existente
+- [ ] **Link "Esqueci a palavra-passe"** — `LoginPage.tsx`: criar rota `/recuperar-password` com `supabase.auth.resetPasswordForEmail()`
+- [ ] **Meta tags dinâmicas** — `ObraPage.tsx`: `document.title = obra.titulo + " — Ana Alexandre"` no `useEffect`
+- [ ] **Carrinho persistente** — `src/lib/cart.tsx`: `localStorage.getItem/setItem("aa_cart", ...)` + verificar disponibilidade ao restaurar
+
+### SEO & Performance
+
+- [ ] `npm install @vercel/analytics @vercel/speed-insights` + adicionar em `src/main.tsx`
+- [ ] `loading="lazy"` e `decoding="async"` em todas as `<img>` de obras (`GaleriaPage`, `ObraPage`)
+- [ ] Code splitting: converter pages para `React.lazy()` em `routes.ts`
+- [ ] Imagens grandes em `public/assets/` — converter para WebP
+
+### Segurança adicional
+
+- [ ] **Upload** — `src/lib/db.ts:uploadObraImage`: validar MIME type, extensão e tamanho ≤ 10 MB
+- [ ] **CSP** — `vercel.json`: adicionar `Content-Security-Policy` (sem duplicar os 4 headers já existentes)
+- [ ] **Consola** — `src/lib/db.ts:124,187,270`: logs detalhados só em `import.meta.env.DEV`
+- [ ] **Edge Functions** — `create-checkout-session`: validar preços > 0 e email format; `send-email`: whitelist de tipos
+- [ ] **Webhook idempotência** — `stripe-webhook`: verificar `stripe_event_id` antes de processar
+
+---
+
+## PRIORIDADE 3 — Melhorias graduais com o site no ar
+
+- [ ] Routing por slug (`/galeria/:slug`) — `getObraBySlug()` já existe em `db.ts`
+- [ ] Filtros na galeria — por técnica e estado
+- [ ] Lightbox — zoom fullscreen na imagem
+- [ ] Página "A minha conta" — histórico de encomendas
+- [ ] Recuperação de palavra-passe — rota + `supabase.auth.resetPasswordForEmail()`
+- [ ] IBAN editável pelo admin — via `config_site`
+- [ ] Gráfico de vendas — Recharts já instalado
+- [ ] Newsletter broadcast — envio para todos via Resend
+- [ ] MB WAY — `payment_method_types: ["mb_way"]`
+- [ ] IVA 23% — Stripe automatic tax
+- [ ] Reembolsos — botão admin + Stripe refund API
+- [ ] Newsletter unsubscribe — token único + `/unsubscribe?token=xxx`
+- [ ] Vercel Analytics + Speed Insights
+- [ ] PWA ícones — `public/icons/icon-192.png` e `icon-512.png`
+- [ ] Abandonos de carrinho — email automático após 24h
+- [ ] Certificado de autenticidade — PDF automático
+
+---
+
+## Comandos essenciais
 
 ```bash
 # Dev
 npm run dev
 
-# Build
+# Build — 0 erros antes de qualquer deploy
 npm run build
 
-# Deploy edge functions
-npx supabase functions deploy create-checkout-session
-npx supabase functions deploy stripe-webhook
-npx supabase functions deploy send-email
-npx supabase functions deploy notify-contacto
+# Regenerar tipos após alterar schema (obrigatório após F1)
+npx supabase gen types typescript --project-id <SEU_PROJECT_ID> \
+  > src/lib/database.types.ts
 
-# Secrets Supabase (configurar ANTES do lançamento)
+# Deploy edge functions
+npx supabase functions deploy --all
+
+# Secrets — configurar ANTES do lançamento
 npx supabase secrets set STRIPE_SECRET_KEY=sk_live_...
 npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
 npx supabase secrets set RESEND_API_KEY=re_...
-npx supabase secrets set SITE_URL=https://ana-alexandre.pt
+npx supabase secrets set SITE_URL=https://atelieranaalexandre.pt
 npx supabase secrets set NOTIFY_EMAIL=atelier.anaalexandre@gmail.com
 npx supabase secrets set IBAN_ATELIER=PT50...
 
-# Stripe webhook local (testes)
+# Verificar .env.local no histórico git
+git log --all --full-history -- .env.local
+
+# Stripe webhook em desenvolvimento
 stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook
 ```

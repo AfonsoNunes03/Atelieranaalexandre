@@ -1,26 +1,20 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "";
 const GOLD = "#C4956A";
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<"loading" | "admin" | "forbidden" | "unauth">("loading");
+export function RequireAuth({ children }: { children: React.ReactNode }) {
+  const [status, setStatus] = useState<"loading" | "auth" | "unauth">("loading");
+  const location = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      const email = data.session?.user?.email;
-      if (!email) setStatus("unauth");
-      else if (email === ADMIN_EMAIL) setStatus("admin");
-      else setStatus("forbidden");
+      setStatus(data.session ? "auth" : "unauth");
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const email = session?.user?.email;
-      if (!email) setStatus("unauth");
-      else if (email === ADMIN_EMAIL) setStatus("admin");
-      else setStatus("forbidden");
+      setStatus(session ? "auth" : "unauth");
     });
 
     return () => subscription.unsubscribe();
@@ -35,8 +29,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (status === "unauth") return <Navigate to="/login" replace />;
-  if (status === "forbidden") return <Navigate to="/" replace />;
+  if (status === "unauth") {
+    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+  }
 
   return <>{children}</>;
 }

@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowLeft, Award, MapPin, Calendar, ExternalLink, ChevronRight } from "lucide-react";
 import { FadeIn } from "./FadeIn";

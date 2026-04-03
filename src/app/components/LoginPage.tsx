@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { signIn } from "../../lib/auth";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import logoImg from "figma:asset/9e49ce9bc26e1e634dc598fea63b188cbb9a363d.png";
@@ -97,14 +98,27 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const redirect = new URLSearchParams(location.search).get("redirect") ?? "/";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setTimeout(() => {
+    setError(null);
+    try {
+      const data = await signIn(email, password);
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL ?? "";
+      if (adminEmail && data.user?.email === adminEmail) {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate(redirect, { replace: true });
+      }
+    } catch {
+      setError("Email ou palavra-passe incorretos.");
       setSubmitting(false);
-      setSubmitted(true);
-    }, 1600);
+    }
   };
 
   return (
@@ -448,6 +462,13 @@ export function LoginPage() {
                     Esqueci a password
                   </Link>
                 </div>
+
+                {/* Error */}
+                {error && (
+                  <p style={{ fontSize: "0.8rem", color: "#B91C1C", textAlign: "center", margin: "-8px 0" }}>
+                    {error}
+                  </p>
+                )}
 
                 {/* Submit button */}
                 <motion.button

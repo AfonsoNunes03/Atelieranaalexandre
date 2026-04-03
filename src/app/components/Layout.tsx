@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Outlet, Link, useLocation, useNavigate } from "react-router";
-import { Menu, X, ShoppingCart, ChevronDown, Mail, Phone, MapPin, Instagram, ArrowRight, Send, Package, LogOut, UserCircle, Facebook, Linkedin } from "lucide-react";
+import { subscribeNewsletter } from "../../lib/db";
+import { signOut } from "../../lib/auth";
+import { supabase } from "../../lib/supabase";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, ShoppingCart, ChevronDown, Mail, Phone, MapPin, Instagram, ArrowRight, Send, Package, LogOut, UserCircle, Facebook, Linkedin, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage, type Lang } from "../i18n";
 
@@ -55,9 +58,29 @@ export function Layout() {
 
   // Account state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [accountHover, setAccountHover] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
+  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL ?? "";
+  const isAdmin = !!userEmail && !!adminEmail && userEmail === adminEmail;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setIsLoggedIn(!!data.session);
+      setUserEmail(data.session?.user?.email ?? null);
+      setUserName(data.session?.user?.user_metadata?.display_name ?? null);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setIsLoggedIn(!!session);
+      setUserEmail(session?.user?.email ?? null);
+      setUserName(session?.user?.user_metadata?.display_name ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -282,6 +305,7 @@ export function Layout() {
             <div ref={accountRef} style={{ position: "relative" }} className="hidden md:block">
               <button
                 onClick={() => {
+                  if (authLoading) return;
                   if (isLoggedIn) {
                     setAccountOpen(v => !v);
                   } else {
@@ -365,10 +389,22 @@ export function Layout() {
                     }}
                   >
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(0,0,0,0.07)", background: "#FAFAF8" }}>
-                      <p style={{ fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "#999", fontWeight: 600, marginBottom: 2 }}>Bem-vinda</p>
-                      <p style={{ fontSize: "0.8rem", color: "#1a1a1a", fontWeight: 500 }}>Ana Alexandre</p>
+                      <p style={{ fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "#999", fontWeight: 600, marginBottom: 2 }}>Bem-vindo</p>
+                      <p style={{ fontSize: "0.8rem", color: "#1a1a1a", fontWeight: 500 }}>{userName ?? userEmail}</p>
                     </div>
                     <div style={{ padding: "6px 0" }}>
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setAccountOpen(false)}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "0.84rem", color: "#444", transition: "background 0.15s", fontFamily: "var(--font-sans)", textDecoration: "none" }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "#F8F5F2")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "none")}
+                        >
+                          <LayoutDashboard size={14} strokeWidth={1.5} style={{ color: GOLD, flexShrink: 0 }} />
+                          Painel Admin
+                        </Link>
+                      )}
                       {[
                         { label: "O meu perfil",         Icon: UserCircle },
                         { label: "As minhas encomendas",  Icon: Package },
@@ -386,7 +422,7 @@ export function Layout() {
                       ))}
                       <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", margin: "4px 8px" }} />
                       <button
-                        onClick={() => { setIsLoggedIn(false); setAccountOpen(false); }}
+                        onClick={async () => { await signOut(); setAccountOpen(false); navigate("/login"); }}
                         style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "0.84rem", color: "#CC3333", transition: "background 0.15s", fontFamily: "var(--font-sans)" }}
                         onMouseEnter={e => (e.currentTarget.style.background = "#FFF5F5")}
                         onMouseLeave={e => (e.currentTarget.style.background = "none")}
@@ -737,6 +773,7 @@ function FAnchor({ href, children }: { href: string; children: React.ReactNode }
 function SiteFooter() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSent, setNewsletterSent] = useState(false);
+  const [newsletterError, setNewsletterError] = useState<string | null>(null);
   const { t } = useLanguage();
 
   const footerExplore = [
@@ -759,9 +796,16 @@ function SiteFooter() {
     { label: t("footer.reclamacoes") },
   ];
 
-  const handleNewsletter = (e: React.FormEvent) => {
+  const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newsletterEmail) { setNewsletterSent(true); }
+    if (!newsletterEmail) return;
+    setNewsletterError(null);
+    try {
+      await subscribeNewsletter(newsletterEmail);
+      setNewsletterSent(true);
+    } catch {
+      setNewsletterError("Erro ao subscrever. Tenta novamente.");
+    }
   };
 
   return (
@@ -817,6 +861,11 @@ function SiteFooter() {
               </motion.form>
             )}
           </AnimatePresence>
+          {newsletterError && (
+            <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.9)", marginTop: 8, textAlign: "center" }}>
+              {newsletterError}
+            </p>
+          )}
         </div>
       </div>
 

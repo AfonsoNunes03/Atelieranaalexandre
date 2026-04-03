@@ -7,6 +7,7 @@ type ContactoInsert = Database["public"]["Tables"]["contactos"]["Insert"];
 type Contacto = Database["public"]["Tables"]["contactos"]["Row"];
 type NewsletterRow = Database["public"]["Tables"]["newsletter"]["Row"];
 type ConfigRow = Database["public"]["Tables"]["config_site"]["Row"];
+type VendaInsert = Database["public"]["Tables"]["vendas"]["Insert"];
 
 // ── Obras ─────────────────────────────────────────────────────────────────────
 
@@ -177,7 +178,7 @@ export async function toggleNewsletterStatus(id: string, ativo: boolean): Promis
   if (error) throw error;
 }
 
-export async function createVenda(venda: any): Promise<string | null> {
+export async function createVenda(venda: VendaInsert): Promise<string | null> {
   const { data, error } = await (supabase.from("vendas") as any)
     .insert(venda)
     .select()
@@ -208,6 +209,27 @@ export async function updateConfigAdmin(chave: string, valor: string): Promise<v
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from("config_site") as any)
     .upsert({ chave, valor }, { onConflict: "chave" });
+  if (error) throw error;
+}
+
+// ── Admin: Vendas ─────────────────────────────────────────────────────────────
+
+type VendaRow = Database["public"]["Tables"]["vendas"]["Row"];
+
+export async function getVendasAdmin(): Promise<VendaRow[]> {
+  const { data, error } = await supabase
+    .from("vendas")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as VendaRow[]) ?? [];
+}
+
+export async function updateVendaEstado(
+  id: string,
+  estado: "pendente" | "pago" | "enviado" | "cancelado"
+): Promise<void> {
+  const { error } = await supabase.from("vendas").update({ estado }).eq("id", id);
   if (error) throw error;
 }
 

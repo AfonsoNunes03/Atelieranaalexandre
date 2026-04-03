@@ -10,7 +10,7 @@ import {
   LayoutGrid, AlignLeft, TrendingUp, X,
 } from "lucide-react";
 import { FadeIn } from "./FadeIn";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 // ── GeoJSON ────────────────────────────────────────────────────
 const geoUrls = {

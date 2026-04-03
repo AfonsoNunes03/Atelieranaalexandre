@@ -1,53 +1,190 @@
 # CLAUDE.md
+> Última atualização: 2026-04-02
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Este ficheiro é a memória persistente do projeto. Lê-o completamente no início de cada sessão.
 
-## Commands
+---
+
+## O que é este projeto
+
+**Atelier Ana Alexandre** — loja de arte online. Vite + React SPA (não Next.js), deployada na Vercel.
+Artista pode gerir obras, ver mensagens, confirmar vendas. Clientes podem ver galeria e comprar.
+
+**Stack**: React 18 + TypeScript + Vite · React Router v6 · Supabase (DB + Auth + Storage + Edge Functions) · Stripe · Resend (emails) · Tailwind CSS · motion/react (animações) · Recharts (gráficos, instalado mas não usado ainda)
+
+---
+
+## Comandos
 
 ```bash
-npm run dev      # start Vite dev server
-npm run build    # production build (output: dist/)
+npm run dev      # servidor Vite em desenvolvimento
+npm run build    # build de produção (output: dist/)
+
+# Após alterar o schema da BD — obrigatório para tipos TypeScript ficarem corretos:
+npx supabase gen types typescript --project-id <ID> > src/lib/database.types.ts
+
+# Deploy das Edge Functions:
+npx supabase functions deploy --all
+
+# Secrets Supabase (configurar antes de deploy):
+npx supabase secrets set STRIPE_SECRET_KEY=sk_live_...
+npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+npx supabase secrets set RESEND_API_KEY=re_...
+npx supabase secrets set SITE_URL=https://atelieranaalexandre.pt
+npx supabase secrets set IBAN_ATELIER=PT50...
+npx supabase secrets set NOTIFY_EMAIL=atelier.anaalexandre@gmail.com
 ```
 
-No test runner is configured. There is no lint script — ESLint is not set up.
+Sem test runner. Sem ESLint.
 
-## Environment
+---
 
-Copy `.env.local.example` to `.env.local` and fill in your Supabase credentials:
+## Ambiente
+
+Copiar `.env.local.example` → `.env.local` e preencher:
 
 ```
 VITE_SUPABASE_URL=https://<project>.supabase.co
 VITE_SUPABASE_ANON_KEY=<anon-key>
+VITE_STRIPE_PUBLISHABLE_KEY=pk_...
+VITE_ADMIN_EMAIL=<email-do-admin>
 ```
 
-Both variables are required at startup — `src/lib/supabase.ts` throws if either is missing.
+`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` são obrigatórios — `src/lib/supabase.ts` lança erro se faltarem.
+`STRIPE_SECRET_KEY` vai para Supabase secrets, **nunca** para o frontend.
 
-## Architecture
+---
 
-This is a **Vite + React SPA** (not Next.js) deployed to Vercel. `vercel.json` rewrites all routes to `index.html` for client-side routing.
+## Arquitetura
 
 ### Routing
 
-`src/app/routes.ts` defines all routes via `react-router-dom`. The root layout (`Layout`) wraps all public pages via nested routes. `/login`, `/register`, and `/admin` are top-level routes outside the layout.
+Ficheiro: `src/app/routes.tsx`
 
-### Supabase
+`vercel.json` redireciona todas as rotas para `index.html` (client-side routing).
 
-All database access goes through `src/lib/db.ts`, which exports typed functions for every operation. `src/lib/supabase.ts` exports the singleton client typed against `src/lib/database.types.ts`. Auth helpers (sign in/out/up, session) are in `src/lib/auth.ts`. The database schema is in `supabase/schema.sql` and is idempotent.
+| Rota | Componente | Notas |
+|---|---|---|
+| `/login` | `LoginPage` | Fora do Layout |
+| `/register` | `RegisterPage` | Fora do Layout |
+| `/admin` | `AdminProtected` | lazy-load + `ProtectedRoute` |
+| `/` | `HomePage` | Dentro do Layout |
+| `/galeria` | `GaleriaPage` | |
+| `/galeria/:id` | `ObraPage` | |
+| `/sobre` | `SobrePage` | |
+| `/mentoria` | `MentoriaPage` | |
+| `/contactos` | `ContactosPage` | |
+| `/premio` | `PremioPage` | |
+| `/termos` | `TermosPage` | |
+| `/privacidade` | `PrivacidadePage` | |
+| `/reclamacoes` | `ReclamacoesPage` | |
+| `/sucesso` | `SucessoPage` | |
+| `/carrinho` | `CarrinhoPage` | |
+| `/checkout` | `CheckoutPage` | Dentro de `<RequireAuth>` |
+| `*` | `HomePage` | fallback |
 
-**Tables:** `obras` (artworks), `contactos` (contact form submissions), `newsletter`, `config_site` (key/value site config).
+### Auth
 
-**RLS:** Public read on `obras`; authenticated write. Public insert on `contactos` and `newsletter`; authenticated read/update.
+**Componentes:**
+- `src/app/components/ProtectedRoute.tsx` — guard admin. Verifica email contra `VITE_ADMIN_EMAIL ?? ""`.
+- `src/app/components/AdminProtected.tsx` — lazy-load + `ProtectedRoute`. Usado na rota `/admin`.
+- `src/app/components/RequireAuth.tsx` — guard para utilizadores normais. Redireciona para `/login?redirect=...` se sem sessão.
 
-### i18n
+**Funções em `src/lib/auth.ts`:**
+- `signIn(email, password)`, `signUp(email, password, name)`, `signOut()`, `getSession()`, `onAuthStateChange(callback)`
 
-`src/app/i18n.tsx` provides a `LanguageProvider` and `useLanguage()` hook. Supported languages: `pt` (default), `en`, `es`, `fr`. All translations live in a single `translations` record in that file.
+**Fluxo:**
+```
+Visitante → vê site livremente
+  └── tenta comprar → RequireAuth → /login?redirect=/checkout
+        ├── tem conta → signIn() → volta ao checkout
+        └── não tem → /register → signUp() → confirmar email → login
+Admin → /login → signIn() → email=VITE_ADMIN_EMAIL → /admin
+```
 
-### Assets
+### Supabase — Base de Dados
 
-Figma-exported assets are referenced via `figma:asset/<hash>.png` imports. `vite.config.ts` includes a custom `figmaAssetPlugin` that maps these hashes to real files under `public/assets/`. When adding new assets from Figma, update the `assetMap` in `vite.config.ts`.
+Todo o acesso à BD passa por `src/lib/db.ts`. Cliente singleton em `src/lib/supabase.ts`, tipado contra `src/lib/database.types.ts`.
 
-The `@` alias resolves to `src/`.
+**Tabelas:** `obras`, `contactos`, `newsletter`, `config_site`, `vendas`
 
-### Admin
+⚠️ **`database.types.ts` não tem a tabela `vendas` tipada** — regenerar após executar migração F1 (ver checklist).
 
-`/admin` is protected by `src/app/components/AdminProtected.tsx`, which checks Supabase auth state. The `AdminDashboard` component manages obras CRUD, contact messages, newsletter subscribers, and site config.
+**Funções exportadas em `src/lib/db.ts`:**
+- Obras: `getObras`, `getObraById`, `getObraBySlug`, `getObrasDestaque`, `createObra`, `updateObra`, `deleteObra`, `updateObraStatus`
+- Contactos: `enviarContacto`, `getContactosAdmin`, `marcarContactoLido`, `deleteContacto`
+- Newsletter: `subscribeNewsletter`, `getNewsletterAdmin`, `toggleNewsletterStatus`
+- Config: `getConfig`, `getConfigAll`, `updateConfigAdmin`
+- Vendas: `createVenda` (usa `any` — corrigir após F1), `getVendasAdmin` e `updateVendaEstado` **ainda não existem**
+- Storage: `uploadObraImage`, `deleteObraImage`
+- Stats: `getStatsAdmin`
+
+### Edge Functions (Supabase)
+
+Todas em `supabase/functions/`. Código escrito, pendente deploy e configuração.
+
+| Função | Propósito | Problema pendente |
+|---|---|---|
+| `create-checkout-session` | Cria sessão Stripe | ⚠️ CORS wildcard |
+| `stripe-webhook` | Processa pagamentos Stripe | ⚠️ Coluna `stripe_id` → renomear para `stripe_session_id` (F1) |
+| `send-email` | Emails via Resend | ⚠️ CORS wildcard + IBAN hardcoded |
+| `notify-contacto` | Notificação de novo contacto | ⚠️ CORS wildcard |
+
+### Admin Dashboard
+
+`src/app/components/AdminDashboard.tsx` — sub-componentes em `src/app/components/admin/`.
+
+⚠️ Dashboard ainda usa arrays mock hardcoded (`STATS`, `ORDERS`, `CLIENTES`, `OBRAS_INIT`, `NEWSLETTER_SUBS`). `DashboardHome.tsx` já usa `getStatsAdmin()` — é o padrão a seguir.
+
+⚠️ `VendasSection.tsx` importa `supabase` diretamente — devia usar `getVendasAdmin()`/`updateVendaEstado()` de `db.ts`.
+
+### Outros
+
+- **i18n**: `src/app/i18n.tsx` — `LanguageProvider` + `useLanguage()`. PT (completo), EN/ES (parcial), FR (incompleto).
+- **Assets**: `figma:asset/<hash>.png` mapeados em `vite.config.ts` para `public/assets/`. Para novos assets: actualizar `assetMap` em `vite.config.ts`. `@` → `src/`.
+- **Carrinho**: `src/lib/cart.tsx` — `useCart()`. Sem persistência em `localStorage`.
+- **Pagamentos**: `src/lib/stripe.ts` chama Edge Function `create-checkout-session`. Webhook não marca obras como `vendido` correctamente.
+- **Toasts**: `src/lib/toast.ts` é o sistema em uso. Não usar `react-hot-toast` (não instalado).
+
+---
+
+## Estado do Projeto
+
+> Plano de execução completo em `prompt/checklist.md`. Ler sempre antes de implementar.
+
+### ✅ Funciona
+- Galeria + CRUD obras no admin
+- Design completo (Sepia/Gold/Creme, animações, responsive)
+- i18n PT/EN/ES/FR
+- SEO base, cookie consent, PWA manifest
+- Routing completo (todas as rotas existem)
+- Auth real: login, registo, guard admin, guard checkout
+
+### ❌ Pendente (crítico para produção)
+- **Schema BD**: coluna `stripe_id` → `stripe_session_id`; sem UPDATE policy em `vendas`; `database.types.ts` sem tabela `vendas`
+- **Webhook**: não marca obras como vendidas após pagamento
+- **IBAN hardcoded** nos emails de transferência
+- **CORS wildcard** nas Edge Functions
+- **Admin com dados mock** em vez de queries reais
+- **Ficheiros públicos em falta**: `favicon.png`, `apple-touch-icon.png`, `og-image.jpg`, ícones PWA
+
+---
+
+## Regras de desenvolvimento
+
+1. **Todo o acesso à BD passa por `src/lib/db.ts`** — nunca usar `supabase.from()` directamente em componentes.
+
+2. **Imports de auth sempre de `src/lib/auth.ts`** — nunca chamar `supabase.auth.*` directamente nos componentes.
+
+3. **Nunca editar `routes.tsx` mais do que uma vez** por sessão — todas as rotas novas num único commit.
+
+4. **Após qualquer alteração ao schema SQL**, regenerar tipos:
+   ```bash
+   npx supabase gen types typescript --project-id <ID> > src/lib/database.types.ts
+   ```
+
+5. **Não usar `framer-motion`** — o projecto usa `motion/react` (pacote `"motion": "12.23.24"`).
+
+6. **Caminho de `db.ts` a partir de componentes**: `../../lib/db` (componentes estão em `src/app/components/`).
+
+7. **Checklist em `prompt/checklist.md`** — fonte de verdade para o que falta. Actualizar quando um item for concluído.

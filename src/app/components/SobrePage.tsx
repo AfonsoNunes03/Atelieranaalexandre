@@ -1,5 +1,5 @@
 import image_b7b24245abcdea29bab902e1ad12d72e9afc2799 from 'figma:asset/b7b24245abcdea29bab902e1ad12d72e9afc2799.png'
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { FadeIn } from "./FadeIn";
 import { ImageWithFallback } from "./figma/ImageWithFallback";

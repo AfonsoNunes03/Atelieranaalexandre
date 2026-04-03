@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../../../../lib/supabase";
+import { getVendasAdmin, updateVendaEstado } from "../../../../lib/db";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   ShoppingBag, 
@@ -16,7 +16,7 @@ import {
   MapPin,
   ChevronRight
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "../../../../lib/toast";
 
 const GOLD = "#C9A96E";
 
@@ -46,13 +46,8 @@ export default function VendasSection() {
   async function fetchVendas() {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("vendas")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setVendas(data || []);
+      const data = await getVendasAdmin();
+      setVendas(data as Venda[]);
     } catch (err) {
       console.error(err);
       toast.error("Erro ao carregar vendas");
@@ -63,16 +58,9 @@ export default function VendasSection() {
 
   async function updateEstado(id: string, novoEstado: Venda['estado']) {
     try {
-      const { error } = await supabase
-        .from("vendas")
-        .update({ estado: novoEstado })
-        .eq("id", id);
-
-      if (error) throw error;
-      
+      await updateVendaEstado(id, novoEstado);
       setVendas(prev => prev.map(v => v.id === id ? { ...v, estado: novoEstado } : v));
       if (selectedVenda?.id === id) setSelectedVenda({ ...selectedVenda, estado: novoEstado });
-      
       toast.success(`Estado atualizado para ${novoEstado}`);
     } catch (err) {
       console.error(err);

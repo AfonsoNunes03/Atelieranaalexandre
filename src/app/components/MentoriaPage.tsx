@@ -1,6 +1,6 @@
 import image_1566f939421df90e36298942ae45397471258acd from 'figma:asset/1566f939421df90e36298942ae45397471258acd.png'
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowRight, ArrowUpRight, Check, ChevronDown,

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
+import { signUp } from "../../lib/auth";
 import { Eye, EyeOff, ArrowRight, Check, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import logoImg from "figma:asset/9e49ce9bc26e1e634dc598fea63b188cbb9a363d.png";
@@ -120,6 +121,7 @@ export function RegisterPage() {
   const [newsletter, setNewsletter] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [values, setValues] = useState({ name: "", email: "", password: "", confirm: "" });
 
   const set = (k: keyof typeof values) => (v: string) =>
@@ -135,14 +137,18 @@ export function RegisterPage() {
     ? "#5DBE7A"
     : undefined;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordMismatch) return;
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    setError(null);
+    try {
+      await signUp(values.email, values.password, values.name);
       setSubmitted(true);
-    }, 1800);
+    } catch {
+      setError("Erro ao criar conta. Tenta novamente.");
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -541,6 +547,13 @@ export function RegisterPage() {
                   </a>
                   .
                 </p>
+
+                {/* Error */}
+                {error && (
+                  <p style={{ fontSize: "0.8rem", color: "#B91C1C", textAlign: "center", margin: "-8px 0" }}>
+                    {error}
+                  </p>
+                )}
 
                 {/* Submit button */}
                 <motion.button

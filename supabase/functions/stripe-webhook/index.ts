@@ -20,7 +20,7 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const resendKey = Deno.env.get("RESEND_API_KEY");
-  const notifyEmail = Deno.env.get("NOTIFY_EMAIL") ?? "atelier.anaalexandre@gmail.com";
+  const notifyEmail = Deno.env.get("NOTIFY_EMAIL") ?? "";
 
   const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -49,17 +49,31 @@ serve(async (req) => {
     const customerName = session.customer_details?.name ?? "Cliente";
     const amountPaid = (session.amount_total ?? 0) / 100;
 
-    // 1. Atualizar estado da venda para 'pago'
+    // 1. Atualizar estado da venda para 'pago' e buscar items
     if (vendaId) {
-      const { error } = await supabase
+      const { data: vendaData, error } = await supabase
         .from("vendas")
         .update({
           estado: "pago",
           stripe_session_id: session.id,
         })
-        .eq("id", vendaId);
+        .eq("id", vendaId)
+        .select("items")
+        .single();
 
-      if (error) console.error("[webhook] Erro a atualizar venda:", error.message);
+      if (error) {
+        console.error("[webhook] Erro a atualizar venda:", error.message);
+      } else {
+        // 2. Marcar obras como vendidas
+        const itemIds: string[] = ((vendaData?.items ?? []) as Array<{ id: string }>).map(i => i.id);
+        if (itemIds.length > 0) {
+          const { error: obrasError } = await supabase
+            .from("obras")
+            .update({ estado: "vendido" })
+            .in("id", itemIds);
+          if (obrasError) console.error("[webhook] Erro a marcar obras:", obrasError.message);
+        }
+      }
     }
 
     // 2. Enviar recibo ao cliente + notificação ao atelier via Resend
@@ -86,11 +100,28 @@ serve(async (req) => {
     }
   }
 
+  // ── checkout.session.expired ──────────────────────────────────────────────
+  if (event.type === "checkout.session.expired") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const { data: venda } = await supabase
+      .from("vendas")
+      .select("id, items")
+      .eq("stripe_session_id", session.id)
+      .single();
+
+    if (venda) {
+      const itemIds: string[] = ((venda.items ?? []) as Array<{ id: string }>).map(i => i.id);
+      if (itemIds.length > 0) {
+        await supabase.from("obras").update({ estado: "disponivel" }).in("id", itemIds);
+      }
+      await supabase.from("vendas").update({ estado: "cancelado" }).eq("id", venda.id);
+    }
+  }
+
   // ── payment_intent.payment_failed ─────────────────────────────────────────
   if (event.type === "payment_intent.payment_failed") {
     const pi = event.data.object as Stripe.PaymentIntent;
     console.warn("[webhook] Pagamento falhou:", pi.id, pi.last_payment_error?.message);
-    // Opcional: marcar venda como 'cancelado' se quiser limpar pendentes
   }
 
   return new Response(JSON.stringify({ received: true }), {

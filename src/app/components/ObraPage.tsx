@@ -1,6 +1,6 @@
 import image_37ae076f9c70040c1e86be4bab8a3370e8023d9e from 'figma:asset/37ae076f9c70040c1e86be4bab8a3370e8023d9e.png';
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, Link, Navigate } from "react-router";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
 import { FadeIn } from "./FadeIn";
 import { ImageWithFallback } from "./figma/ImageWithFallback";

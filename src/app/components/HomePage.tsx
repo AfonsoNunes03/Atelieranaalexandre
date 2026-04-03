@@ -6,7 +6,7 @@ import image_8b799b9061113d500f7cda6a170d147e2226ecaf from 'figma:asset/8b799b90
 import image_cd5e5be9bbc847f612d6eee464133e65f8dd8c6f from 'figma:asset/cd5e5be9bbc847f612d6eee464133e65f8dd8c6f.png'
 import image_e3ebd450bf669425543eab28f6d0c6bbe28bea85 from 'figma:asset/e3ebd450bf669425543eab28f6d0c6bbe28bea85.png'
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowRight, ArrowUpRight, ChevronRight } from "lucide-react";
 import { FadeIn } from "./FadeIn";
