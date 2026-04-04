@@ -14,14 +14,19 @@ import { TermosPage } from "./components/TermosPage";
 import { PrivacidadePage } from "./components/PrivacidadePage";
 import { ReclamacoesPage } from "./components/ReclamacoesPage";
 import { SucessoPage } from "./components/SucessoPage";
+import { RecoverPasswordPage } from "./components/RecoverPasswordPage";
+import { ResetPasswordPage } from "./components/ResetPasswordPage";
 import { CarrinhoPage } from "./components/CarrinhoPage";
 import { CheckoutPage } from "./components/CheckoutPage";
 import { RequireAuth } from "./components/RequireAuth";
+import { NotFoundPage } from "./components/NotFoundPage";
 
 export const router = createBrowserRouter([
   { path: "/login", Component: LoginPage },
   { path: "/register", Component: RegisterPage },
   { path: "/admin", Component: AdminProtected },
+  { path: "/recuperar-password", Component: RecoverPasswordPage },
+  { path: "/reset-password", Component: ResetPasswordPage },
   {
     path: "/",
     Component: Layout,
@@ -46,7 +51,7 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
-      { path: "*", Component: HomePage },
+      { path: "*", Component: NotFoundPage },
     ],
   },
 ]);

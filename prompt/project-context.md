@@ -43,6 +43,12 @@ See `prompt/checklist.md` for full details.
 3. Create obra form with image upload
 4. Connect all admin sections (contactos, newsletter, config)
 
+### Future Priorities (UX & Design):
+- Premium Polish: Hover animations & Skeleton Screens
+- Persistence: LocalStorage for cart
+- Performance: Image optimization via Supabase Transformation
+- Global: SEO (Meta Tags) & PWA integration
+
 ## Quick Start Commands
 ```bash
 npm run dev    # Start development server

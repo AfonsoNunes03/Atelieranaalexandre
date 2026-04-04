@@ -13,20 +13,26 @@ import { FadeIn } from "./FadeIn";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { ExposicoesMap } from "./ExposicoesMap";
 import { CurvedCarousel } from "./CurvedCarousel";
-import IMG_HERO from "figma:asset/c6ec47ad31a374d698871b53f04cffacae2d696b.png";
+import { getConfigAll } from "../../lib/db";
+
+// ── Default Configs (Fallback) ──────────────────────────────────────────────────
+const DEFAULT_CONFIGS = {
+  hero_titulo: "O Silêncio da Cor",
+  hero_subtitulo: "Investigação Plástica e Pintura Contemporânea — obras originais criadas no coração de Portugal.",
+  hero_imagem: "/hero-principal.jpg",
+  bio_texto: "Artista plástica focada na exploração da luz e da cor através de técnicas mistas.",
+  bio_imagem: "https://images.unsplash.com/photo-1764032760214-bbf340016105?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+  gallery_wall_imagem: "/gallery-wall.jpg",
+  process_imagem: "/paint-detail.jpg"
+};
 
 // ── Constants ──────────────────────────────────────────────────
 const GOLD = "#C9A96E";
-const IMG_PROCESS =
-  "https://images.unsplash.com/photo-1758522276949-f45d30fe7cb9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-const IMG_GALLERY_WALL =
-  "https://images.unsplash.com/photo-1750865694755-83b5a7dca81c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-const IMG_PORTRAIT =
-  "https://images.unsplash.com/photo-1764032760214-bbf340016105?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-const IMG_WARM =
-  "https://images.unsplash.com/photo-1638888077595-039e77b1dc70?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-const IMG_WORKSHOP =
-  "https://images.unsplash.com/photo-1696862048447-3ab8435ce5f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
+const IMG_PROCESS = "/paint-detail.jpg";
+const IMG_GALLERY_WALL = "/gallery-wall.jpg";
+const IMG_PORTRAIT = "https://images.unsplash.com/photo-1764032760214-bbf340016105?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
+const IMG_WARM = "https://images.unsplash.com/photo-1638888077595-039e77b1dc70?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
+const IMG_WORKSHOP = "/paint-detail.jpg";
 
 const FEATURED_WORKS = [
   {
@@ -82,22 +88,22 @@ const COLLECTIONS = [
   {
     id: "acervo",
     label: "Acervo Principal",
-    count: "32 obras",
-    desc: "Pinturas originais de grande formato",
+    count: "Obras Únicas",
+    desc: "Pinturas originas de grande formato em óleo e acrílico.",
     image: IMG_GALLERY_WALL,
   },
   {
     id: "series",
     label: "Séries Temáticas",
-    count: "18 obras",
-    desc: "Conjuntos narrativos coerentes",
+    count: "Coleções",
+    desc: "Explorações artísticas em conjuntos narrativos coerentes.",
     image: IMG_WARM,
   },
   {
     id: "drawing",
     label: "Desenhos & Estudos",
-    count: "24 obras",
-    desc: "Grafite, esboços e trabalhos em papel",
+    count: "Papel & Esboços",
+    desc: "Obras sobre papel, grafite e carvão — a génese da cor.",
     image: IMG_PROCESS,
   },
 ];
@@ -300,9 +306,28 @@ function ArtworkCard({
 
 // ── Main Component ─────────────────────────────────────────────
 export function HomePage() {
+  const [siteConfig, setSiteConfig] = useState(DEFAULT_CONFIGS);
   const [hoveredCollection, setHoveredCollection] = useState<string | null>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const testimonialRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadSiteConfig() {
+      try {
+        const configs = await getConfigAll();
+        // Convert array to object
+        const configMap = configs.reduce((acc, curr) => {
+          acc[curr.chave] = curr.valor;
+          return acc;
+        }, {} as any);
+        
+        setSiteConfig(prev => ({ ...prev, ...configMap }));
+      } catch (error) {
+        console.error("Failed to load site configurations:", error);
+      }
+    }
+    loadSiteConfig();
+  }, []);
 
   // Track scroll position to update active dot
   const handleTestimonialScroll = useCallback(() => {
@@ -411,9 +436,9 @@ export function HomePage() {
                 marginBottom: "16px",
               }}
             >
-              O Silêncio
+              {siteConfig.hero_titulo.split(' ').slice(0, -2).join(' ')}
               <br />
-              <em style={{ color: GOLD }}>da Cor</em>
+              <em style={{ color: GOLD }}>{siteConfig.hero_titulo.split(' ').slice(-2).join(' ')}</em>
             </h1>
 
             {/* Horizontal rule */}
@@ -430,7 +455,7 @@ export function HomePage() {
                 letterSpacing: "0.02em",
               }}
             >
-              Investigação Plástica e Pintura Contemporânea — obras originais criadas no coração de Portugal.
+              {siteConfig.hero_subtitulo}
             </p>
 
             {/* CTAs */}
@@ -557,11 +582,11 @@ export function HomePage() {
                 borderRadius: 16,
                 overflow: "hidden",
                 boxShadow: "0 24px 64px rgba(0,0,0,0.16), 0 8px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(201,169,110,0.06)",
-                aspectRatio: "3/4",
+                aspectRatio: "1.0",
               }}
             >
               <img
-                src={IMG_HERO}
+                src={siteConfig.hero_imagem}
                 alt="Obra em destaque"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
@@ -587,11 +612,14 @@ export function HomePage() {
                 inset: "clamp(12px,2vw,24px)",
                 borderRadius: "16px",
                 overflow: "hidden",
+                aspectRatio: "1.0",
+                width: "min(100%, 80vh)",
+                margin: "auto",
                 boxShadow: "0 32px 80px rgba(0,0,0,0.18), 0 12px 32px rgba(0,0,0,0.1), 0 0 0 1px rgba(201,169,110,0.08)",
               }}
             >
               <img
-                src={IMG_HERO}
+                src={siteConfig.hero_imagem}
                 alt="Obra em destaque"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
@@ -920,7 +948,7 @@ export function HomePage() {
                 {/* Main image */}
                 <div style={{ overflow: "hidden", borderRadius: "16px", boxShadow: "0 24px 64px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.06)" }}>
                   <img
-                    src={image_aa31aa09cda51a3c67f8269dc5d7f355182d82ed}
+                    src={siteConfig.process_imagem}
                     alt="O processo criativo"
                     style={{ width: "100%", display: "block", aspectRatio: "4/3", objectFit: "cover" }}
                   />
@@ -967,8 +995,7 @@ export function HomePage() {
                   <em style={{ color: GOLD }}>uma Obra</em>
                 </h2>
                 <p style={{ color: "#666", fontSize: "0.9rem", lineHeight: 1.8, marginBottom: "clamp(28px,4vw,40px)", maxWidth: 440 }}>
-                  Em Tomar, Portugal, o atelier é o espaço onde a criação acontece sem filtros. Um lugar de silêncio,
-                  música, tela e tinta — onde cada obra encontra a sua linguagem própria.
+                  {siteConfig.bio_texto}
                 </p>
 
                 {/* Process steps */}

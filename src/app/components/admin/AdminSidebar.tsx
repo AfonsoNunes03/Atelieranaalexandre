@@ -20,12 +20,12 @@ export function AdminSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarO
   const navigate = useNavigate();
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
+    { id: "home", label: "Painel Principal", Icon: LayoutDashboard },
     { id: "obras", label: "Gestão de Obras", Icon: Palette },
-    { id: "conteudo", label: "Conteúdo Site", Icon: FileText },
-    { id: "vendas", label: "Vendas", Icon: ShoppingBag },
-    { id: "mensagens", label: "Mensagens & Newsletter", Icon: MessageSquare },
-    { id: "membros", label: "Membros", Icon: Users },
+    { id: "vendas", label: "Vendas e Encomendas", Icon: ShoppingBag },
+    { id: "conteudos", label: "Editar o Website", Icon: FileText },
+    { id: "msgs", label: "Mensagens & Email", Icon: MessageSquare },
+    { id: "membros", label: "Base de Clientes", Icon: Users },
     { id: "settings", label: "Definições", Icon: Settings },
   ];
 

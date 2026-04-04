@@ -7,7 +7,7 @@ import artistPhoto from "figma:asset/ae632b3d89a4d086032a660429b1a01696ef459e.pn
 
 const GOLD = "#C9A96E";
 
-const artistImage = artistPhoto;
+const artistImage = "/ana-alexandre-retrato.jpg";
 
 const galleryImage =
   "https://images.unsplash.com/photo-1723974591057-ccadada1f283?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb250ZW1wb3JhcnklMjBhcnQlMjBleGhpYml0aW9uJTIwbW9kZXJuJTIwZ2FsbGVyeXxlbnwxfHx8fDE3NzM1OTI3MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";

@@ -291,3 +291,20 @@ export async function deleteObraImage(imageUrl: string): Promise<void> {
 
   if (error) console.error("Erro ao eliminar imagem:", error);
 }
+export async function uploadSiteImage(file: File, chave: string): Promise<string> {
+  const fileExt = file.name.split(".").pop();
+  const fileName = `${chave}-${Date.now()}.${fileExt}`;
+
+  // Tentamos enviar para o bucket 'obras' já que já existe, mas numa pasta 'site/'
+  const { error } = await supabase.storage
+    .from("obras") // Usando o bucket existente por segurança
+    .upload(`site/${fileName}`, file);
+
+  if (error) throw error;
+
+  const { data } = supabase.storage
+    .from("obras")
+    .getPublicUrl(`site/${fileName}`);
+
+  return data.publicUrl;
+}

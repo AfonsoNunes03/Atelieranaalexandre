@@ -277,15 +277,29 @@ function ArtworkCard({
               <ImageWithFallback
                 src={work.image}
                 alt={work.title}
-                className="w-full h-full object-cover transition-transform duration-[1.8s] ease-out group-hover:scale-[1.06]"
+                className="w-full h-full object-cover transition-transform duration-[2.2s] ease-out group-hover:scale-[1.04]"
               />
+              
+              {/* Shimmer Sweep Effect */}
               <motion.div
-                className="absolute inset-0 flex flex-col justify-between p-4"
+                className="absolute inset-0 z-10 pointer-events-none"
+                initial={{ x: "-100%", opacity: 0 }}
+                whileHover={{ x: "100%", opacity: 0.4 }}
+                transition={{ duration: 1.2, ease: "easeInOut" }}
+                style={{
+                  background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)",
+                  width: "100%",
+                  height: "100%"
+                }}
+              />
+
+              <motion.div
+                className="absolute inset-0 flex flex-col justify-between p-4 z-20"
                 initial={false}
                 animate={{ opacity: isHovered ? 1 : 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4 }}
                 style={{
-                  background: "linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.0) 40%, rgba(0,0,0,0.45) 100%)",
+                  background: "linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.4) 100%)",
                   pointerEvents: isHovered ? "auto" : "none",
                 }}
               >
@@ -727,6 +741,7 @@ export function GaleriaPage() {
               transition={{ duration: 0.5 }}
             >
               {/* Featured image */}
+              {featuredWorks[featuredIndex] && (
               <Link
                 to={`/galeria/${featuredWorks[featuredIndex].id}`}
                 className="group relative overflow-hidden rounded-sm block"
@@ -770,6 +785,7 @@ export function GaleriaPage() {
                   ))}
                 </div>
               </Link>
+              )}
 
               {/* Featured info */}
               <div className="py-4">
@@ -788,12 +804,10 @@ export function GaleriaPage() {
                     lineHeight: 1.1,
                   }}
                 >
-                  {featuredWorks[featuredIndex].title}
+                  {featuredWorks[featuredIndex]?.title}
                 </h2>
                 <p className="text-[0.9rem] text-[#888] mb-8 leading-[1.9] max-w-md">
-                  Esta peça é o resultado de um diálogo íntimo entre matéria e intenção.
-                  Cada camada revela profundidade, criando uma experiência visual que evolui
-                  com a luz do dia.
+                  {featuredWorks[featuredIndex]?.technique} · {featuredWorks[featuredIndex]?.dimensions}
                 </p>
 
                 <div className="grid grid-cols-2 gap-4 mb-10">

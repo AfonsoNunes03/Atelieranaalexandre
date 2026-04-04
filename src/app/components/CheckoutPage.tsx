@@ -53,9 +53,20 @@ export function CheckoutPage() {
         .from("obras")
         .select("id, titulo, estado")
         .in("id", items.map(i => i.id));
+
+      // Se não encontrou todas as obras ou alguma não está disponível
       const indisponiveis = (obrasAtuais ?? []).filter(o => o.estado !== "disponivel");
+      const idsEncontrados = (obrasAtuais ?? []).map(o => o.id);
+      const obrasFaltam = items.filter(i => !idsEncontrados.includes(i.id));
+
       if (indisponiveis.length > 0) {
-        setError(`"${indisponiveis[0].titulo}" já não está disponível. Atualiza o carrinho.`);
+        setError(`"${indisponiveis[0].titulo}" já não está disponível.`);
+        setSending(false);
+        return;
+      }
+
+      if (obrasFaltam.length > 0) {
+        setError(`"${obrasFaltam[0].titulo}" já não se encontra na galeria.`);
         setSending(false);
         return;
       }
@@ -110,7 +121,7 @@ export function CheckoutPage() {
       ]);
 
       clearCart();
-      navigate("/sucesso");
+      navigate("/sucesso?transferencia=true");
     } catch (err: any) {
       console.error("Checkout Error:", err);
       // Se for um erro do Supabase sobre a tabela não existir:

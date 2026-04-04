@@ -26,6 +26,12 @@ export async function getSession() {
   return data.session;
 }
 
+export async function updatePassword(newPassword: string) {
+  const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+  return data;
+}
+
 export function onAuthStateChange(callback: (session: boolean) => void) {
   return supabase.auth.onAuthStateChange((_event, session) => {
     callback(!!session);

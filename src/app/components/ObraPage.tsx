@@ -1,10 +1,10 @@
-import image_37ae076f9c70040c1e86be4bab8a3370e8023d9e from 'figma:asset/37ae076f9c70040c1e86be4bab8a3370e8023d9e.png';
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
 import { FadeIn } from "./FadeIn";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import useEmblaCarousel from "embla-carousel-react";
+import { getObraBySlug, getObras } from "../../lib/db";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +21,7 @@ import {
   ZoomIn,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 
 const GOLD = "#C9A96E";
@@ -29,212 +30,62 @@ const GOLD_DARK = "#b8944f";
 const CHARCOAL = "#1a1a1a";
 const WARM = "#FAF8F5";
 
-// ─── Image URLs ────────────────────────────────────────────────────────────────
-const IMG_MACRO =
-  "https://images.unsplash.com/photo-1600196342919-4ede1f4ff45f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHBhaW50aW5nJTIwdGV4dHVyZSUyMG1hY3JvJTIwYnJ1c2hzdHJva2UlMjBkZXRhaWx8ZW58MXx8fHwxNzcyNjE3NjM3fDA&ixlib=rb-4.1.0&q=80&w=1080";
-const IMG_DETAIL2 =
-  "https://images.unsplash.com/photo-1758522274454-07a58f332320?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2xvcmZ1bCUyMGFic3RyYWN0JTIwYXJ0JTIwcGFpbnRpbmclMjBjbG9zZSUyMHVwJTIwcGFpbnR8ZW58MXx8fHwxNzcyNjE3NjQwfDA&ixlib=rb-4.1.0&q=80&w=1080";
-const IMG_MOCKUP =
-  "https://images.unsplash.com/photo-1642455680602-7b4ddf7560a4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHBhaW50aW5nJTIwaGFuZ2luZyUyMGxpdmluZyUyMHJvb20lMjB3YWxsJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzcyNjE3NjM4fDA&ixlib=rb-4.1.0&q=80&w=1080";
-const IMG_EDGE =
-  "https://images.unsplash.com/photo-1743267216980-a5ffe3766818?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW52YXMlMjBwYWludGluZyUyMHNpZGUlMjBwcm9maWxlJTIwc3RyZXRjaGVkJTIwZnJhbWV8ZW58MXx8fHwxNzcyNjE3NjM4fDA&ixlib=rb-4.1.0&q=80&w=1080";
+// ─── Constants & Types ────────────────────────────────────────────────────────
+const IMG_MACRO = "https://images.unsplash.com/photo-1600196342919-4ede1f4ff45f?q=80&w=1080";
 
-// ─── Extended Artwork Data ─────────────────────────────────────────────────────
-const artworkDetails = [
-  {
-    id: 1,
-    title: "Sem Título I",
+type ObraReal = {
+  id: string;
+  slug: string;
+  title: string;
+  artist: string;
+  technique: string;
+  support: string;
+  dimensionsFormatted: string;
+  year: string;
+  edition: string;
+  price: number;
+  vatNote: string;
+  status: string;
+  categoryLabel: string;
+  images: { id: string; src: string; label: string }[];
+  narrative: { title: string; paragraphs: string[]; pullQuote: string };
+  relatedIds: string[];
+};
+
+function mapObraToDetail(o: any): ObraReal {
+  const t = (o.tecnica || "").toLowerCase();
+  const categoryLabel = t.includes("grafite") || t.includes("papel") ? "Desenhos & Estudos"
+                      : t.includes("mista") ? "Séries Temáticas"
+                      : "Obras Principais";
+  
+  const estadoMap: Record<string, string> = { disponivel: "Disponível", reservado: "Reservado", vendido: "Vendido" };
+
+  return {
+    id: o.id,
+    slug: o.slug,
+    title: o.titulo,
     artist: "Ana Alexandre",
-    technique: "Acrílico sobre Tela de Algodão",
-    support: "Tela de algodão esticada sobre chassis de pinho",
-    dimensionsFormatted: "100 × 80 × 3,5 cm",
-    year: "2025",
+    technique: o.tecnica,
+    support: t.includes("tela") ? "Tela de algodão sobre chassis" : "Papel de arquivo 300g",
+    dimensionsFormatted: o.dimensoes || "Dimensões sob consulta",
+    year: o.ano?.toString() || "2024",
     edition: "Obra única",
-    price: 1200,
+    price: o.preco || 0,
     vatNote: "IVA incluído",
-    status: "Disponível",
-    categoryLabel: "Obras Principais",
+    status: estadoMap[o.estado] || o.estado,
+    categoryLabel,
     images: [
-      { id: "main", src: image_37ae076f9c70040c1e86be4bab8a3370e8023d9e, label: "Vista Frontal" },
+      { id: "main", src: o.imagem_url || "", label: "Vista Frontal" },
       { id: "macro", src: IMG_MACRO, label: "Detalhe Textura" },
-      { id: "detail2", src: IMG_DETAIL2, label: "Detalhe Tinta" },
-      { id: "mockup", src: IMG_MOCKUP, label: "Contexto Real" },
-      { id: "edge", src: IMG_EDGE, label: "Perfil da Tela" },
     ],
     narrative: {
       title: "Sobre esta obra",
-      paragraphs: [
-        "Esta obra nasce de um momento de silêncio interior, onde a tela se tornou o único espaço possível para dar forma ao que as palavras não alcançam. A paleta foi construída de forma intuitiva — camada sobre camada — sem esboço prévio, deixando que cada gesto revelasse a intenção seguinte.",
-        "As pinceladas amplas que percorrem o canvas de forma diagonal evocam movimento e respiração, enquanto os estratos de cor criam uma profundidade quase geológica. Há nesta composição uma tensão deliberada entre o caos aparente das primeiras marcas e a ordem que emerge à medida que o olhar se demora.",
-        "Para o colecionador, esta peça oferece algo raro: uma obra que muda consoante a luz do dia. Ao amanhecer, os tons quentes dominam. À tarde, o azul profundo emerge das sombras. À noite, sob luz artificial, a textura torna-se táctil, quase tangível.",
-      ],
-      pullQuote: '"A tela não recebe — ela responde."',
+      paragraphs: o.descricao ? o.descricao.split("\n\n") : ["Esta obra é uma peça única criada pela artista Ana Alexandre, explorando a materialidade e a luz através do seu gesto pictórico característico."],
+      pullQuote: `"${o.titulo}"`,
     },
-    relatedIds: [2, 4, 6],
-  },
-  {
-    id: 2,
-    title: "Sem Título II",
-    artist: "Ana Alexandre",
-    technique: "Óleo sobre Tela de Linho",
-    support: "Tela de linho belga sobre chassis de pinho",
-    dimensionsFormatted: "120 × 100 × 3,5 cm",
-    year: "2024",
-    edition: "Obra única",
-    price: 1800,
-    vatNote: "IVA incluído",
-    status: "Disponível",
-    categoryLabel: "Obras Principais",
-    images: [
-      {
-        id: "main",
-        src: "https://images.unsplash.com/photo-1662124530117-7774f635f9f9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMGJsdWUlMjBnb2xkJTIwYnJ1c2hzdHJva2VzfGVufDF8fHx8MTc3MjUzNjk0OHww&ixlib=rb-4.1.0&q=80&w=1080",
-        label: "Vista Frontal",
-      },
-      { id: "macro", src: IMG_MACRO, label: "Detalhe Textura" },
-      { id: "mockup", src: IMG_MOCKUP, label: "Contexto Real" },
-      { id: "edge", src: IMG_EDGE, label: "Perfil da Tela" },
-    ],
-    narrative: {
-      title: "Sobre esta obra",
-      paragraphs: [
-        "Criada durante um período de intensa pesquisa sobre a relação entre pigmento e suporte, esta obra explora o diálogo entre transparência e opacidade característico do óleo.",
-        "As veladuras sobrepostas criam uma luminosidade interior única — como se a luz emanasse da própria tela em vez de ser apenas refletida. Uma peça que convida ao recolhimento e à contemplação longa.",
-      ],
-      pullQuote: '"A lentidão do óleo é a sua própria sabedoria."',
-    },
-    relatedIds: [1, 4, 6],
-  },
-  {
-    id: 3,
-    title: "Sem Título III",
-    artist: "Ana Alexandre",
-    technique: "Técnica Mista",
-    support: "Papel de algodão 300g montado em chassis",
-    dimensionsFormatted: "80 × 60 × 2 cm",
-    year: "2024",
-    edition: "Obra única",
-    price: 900,
-    vatNote: "IVA incluído",
-    status: "Reservado",
-    categoryLabel: "Séries Temáticas",
-    images: [
-      {
-        id: "main",
-        src: "https://images.unsplash.com/photo-1566153509056-c1d1a75078a4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHBhaW50aW5nJTIwcmVkJTIwdGVycmFjb3R0YSUyMHRleHR1cmV8ZW58MXx8fHwxNzcyNTM2OTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-        label: "Vista Frontal",
-      },
-      { id: "macro", src: IMG_MACRO, label: "Detalhe Textura" },
-      { id: "mockup", src: IMG_MOCKUP, label: "Contexto Real" },
-    ],
-    narrative: {
-      title: "Sobre esta obra",
-      paragraphs: [
-        "Parte de uma série que explora a materialidade da terra e o conceito de raiz. Os pigmentos terrosos foram aplicados com gestos amplos, deixando visíveis as marcas do processo criativo.",
-        "A obra dialoga com a tradição do informalismo europeu, enquanto mantém uma voz absolutamente contemporânea.",
-      ],
-      pullQuote: '"A terra como memória, a cor como linguagem."',
-    },
-    relatedIds: [1, 5, 6],
-  },
-  {
-    id: 4,
-    title: "Fragmento IV",
-    artist: "Ana Alexandre",
-    technique: "Acrílico e Resina",
-    support: "Tela de linho sobre chassis de madeira maciça",
-    dimensionsFormatted: "150 × 120 × 4 cm",
-    year: "2023",
-    edition: "Obra única",
-    price: 2400,
-    vatNote: "IVA incluído",
-    status: "Disponível",
-    categoryLabel: "Obras Principais",
-    images: [
-      {
-        id: "main",
-        src: "https://images.unsplash.com/photo-1635141849017-c531949fb5b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHBhaW50aW5nJTIwY29sb3JmdWwlMjB0ZXh0dXJlJTIwY2FudmFzfGVufDF8fHx8MTc3MjUzNjk0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-        label: "Vista Frontal",
-      },
-      { id: "macro", src: IMG_MACRO, label: "Detalhe Textura" },
-      { id: "detail2", src: IMG_DETAIL2, label: "Detalhe Resina" },
-      { id: "mockup", src: IMG_MOCKUP, label: "Contexto Real" },
-      { id: "edge", src: IMG_EDGE, label: "Perfil da Tela" },
-    ],
-    narrative: {
-      title: "Sobre esta obra",
-      paragraphs: [
-        "A resina foi incorporada não como verniz final, mas como elemento compositivo — criando planos de profundidade e refletividade que transformam a obra consoante o ângulo de visão.",
-        "Uma das obras mais ambiciosas desta fase criativa. A escala imponente convida o corpo a aproximar-se, enquanto a complexidade da superfície recompensa o olhar demorado.",
-      ],
-      pullQuote: '"A resina aprisionou o tempo dentro da tela."',
-    },
-    relatedIds: [1, 2, 6],
-  },
-  {
-    id: 5,
-    title: "Estudo V",
-    artist: "Ana Alexandre",
-    technique: "Grafite sobre Papel",
-    support: "Papel de arquivo acid-free 250g",
-    dimensionsFormatted: "42 × 29,7 × 0 cm",
-    year: "2025",
-    edition: "Obra única",
-    price: 350,
-    vatNote: "IVA incluído",
-    status: "Disponível",
-    categoryLabel: "Desenhos & Estudos",
-    images: [
-      {
-        id: "main",
-        src: "https://images.unsplash.com/photo-1527072822261-d82e76bdb103?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFjcnlsaWMlMjBwYWludGluZyUyMGNvbnRlbXBvcmFyeSUyMGFydHxlbnwxfHx8fDE3NzI1MzY5NTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-        label: "Vista Frontal",
-      },
-      { id: "macro", src: IMG_MACRO, label: "Detalhe Traço" },
-    ],
-    narrative: {
-      title: "Sobre este estudo",
-      paragraphs: [
-        "Os estudos em papel são a dimensão mais íntima da prática artística de Ana Alexandre — registos que capturam o pensamento em movimento, antes que a reflexão interfira com o gesto.",
-        "Este desenho a grafite revela a disciplina do traço e a musicalidade da composição que caracteriza toda a obra da artista.",
-      ],
-      pullQuote: '"O estudo não prepara a obra — ele é a obra."',
-    },
-    relatedIds: [1, 3, 6],
-  },
-  {
-    id: 6,
-    title: "Cartografia VI",
-    artist: "Ana Alexandre",
-    technique: "Técnica Mista sobre Tela",
-    support: "Tela de juta sobre chassis de metal",
-    dimensionsFormatted: "100 × 100 × 3,5 cm",
-    year: "2023",
-    edition: "Obra única",
-    price: 1500,
-    vatNote: "IVA incluído",
-    status: "Disponível",
-    categoryLabel: "Séries Temáticas",
-    images: [
-      {
-        id: "main",
-        src: "https://images.unsplash.com/photo-1556139930-c23fa4a4f934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMG1peGVkJTIwbWVkaWElMjBwYWludGluZyUyMGRhcmslMjBtb29keXxlbnwxfHx8fDE3NzI1MzY5NTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-        label: "Vista Frontal",
-      },
-      { id: "macro", src: IMG_MACRO, label: "Detalhe Textura" },
-      { id: "mockup", src: IMG_MOCKUP, label: "Contexto Real" },
-    ],
-    narrative: {
-      title: "Sobre esta obra",
-      paragraphs: [
-        "A série Cartografia explora a ideia de mapear o invisível — emoções, memórias, geografias interiores. Esta obra é o sexto ponto de referência dessa exploração.",
-        "A sobreposição de materiais heterogéneos — acrílico, grafite, colagem, areia — cria uma superfície simultaneamente pictórica e escultórica.",
-      ],
-      pullQuote: '"Cartografar é encontrar o que não se sabia que existia."',
-    },
-    relatedIds: [1, 2, 4],
-  },
-];
+    relatedIds: []
+  };
+}
 
 // ─── Gold shimmer keyframes (injected once) ────────────────────────────────────
 const shimmerCSS = `
@@ -411,8 +262,10 @@ function Lightbox({
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export function ObraPage() {
-  const { id } = useParams();
-  const artwork = artworkDetails.find((a) => a.id === parseInt(id || "1"));
+  const { id } = useParams(); // id is the slug
+  const [artwork, setArtwork] = useState<ObraReal | null>(null);
+  const [relatedArtworks, setRelatedArtworks] = useState<ObraReal[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [activeImage, setActiveImage] = useState(0);
   const [showStickyBar, setShowStickyBar] = useState(false);
@@ -421,12 +274,39 @@ export function ObraPage() {
   const ctaRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
 
-  // Embla: galeria principal com swipe nativo
   const [galleryRef, galleryApi] = useEmblaCarousel({ loop: true });
-  // Embla: carrossel de obras relacionadas
   const [emblaRef] = useEmblaCarousel({ align: "start", dragFree: true });
 
-  // Parallax for hero
+  useEffect(() => {
+    async function loadData() {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const obra = await getObraBySlug(id);
+        if (obra) {
+          const detail = mapObraToDetail(obra);
+          setArtwork(detail);
+          
+          // Load related
+          const all = await getObras();
+          const related = all
+            .filter(o => o.slug !== id)
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 3)
+            .map(mapObraToDetail);
+          setRelatedArtworks(related);
+        } else {
+          setArtwork(null);
+        }
+      } catch (err) {
+        console.error("Error loading artwork:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [id]);
+
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"],
@@ -434,7 +314,6 @@ export function ObraPage() {
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 80]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0.3]);
 
-  // Sincroniza índice com gesto de swipe
   useEffect(() => {
     if (!galleryApi) return;
     const onSelect = () => setActiveImage(galleryApi.selectedScrollSnap());
@@ -442,7 +321,6 @@ export function ObraPage() {
     return () => { galleryApi.off("select", onSelect); };
   }, [galleryApi]);
 
-  // Clique na miniatura → scroll Embla + actualiza índice
   const handleThumbnailClick = (index: number) => {
     setActiveImage(index);
     galleryApi?.scrollTo(index);
@@ -458,7 +336,6 @@ export function ObraPage() {
     setActiveImage((prev) => (prev + 1) % artwork.images.length);
   }, [artwork]);
 
-  // Sticky bar: aparece quando os CTAs saem do viewport
   useEffect(() => {
     const el = ctaRef.current;
     if (!el) return;
@@ -468,20 +345,22 @@ export function ObraPage() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [loading]);
 
-  // Reset state on artwork change
   useEffect(() => {
     setActiveImage(0);
     setLiked(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [id]);
 
-  if (!artwork) return <Navigate to="/galeria" />;
+  if (loading) return (
+    <div className="min-h-screen bg-[#fafaf8] flex flex-col items-center justify-center gap-4">
+      <Loader2 size={32} className="animate-spin" style={{ color: GOLD }} />
+      <p className="text-[0.65rem] tracking-[0.2em] uppercase text-[#aaa]">Carregando Obra...</p>
+    </div>
+  );
 
-  const relatedArtworks = artwork.relatedIds
-    .map((rid) => artworkDetails.find((a) => a.id === rid))
-    .filter(Boolean) as typeof artworkDetails;
+  if (!artwork) return <Navigate to="/galeria" />;
 
   const specs = [
     { label: "Técnica", value: artwork.technique },
