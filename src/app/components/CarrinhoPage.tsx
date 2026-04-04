@@ -11,7 +11,7 @@ export function CarrinhoPage() {
 
   if (items.length === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: CREAM, padding: "80px 20px" }}>
+      <div style={{ minHeight: "100vh", background: CREAM, padding: "clamp(72px,10vw,80px) 20px" }}>
         <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
           <ShoppingBag size={64} strokeWidth={1} style={{ color: GOLD, marginBottom: "24px" }} />
           <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.75rem", color: "#1a1a1a", marginBottom: "12px" }}>
@@ -45,7 +45,7 @@ export function CarrinhoPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: CREAM, padding: "100px 20px 60px" }}>
+    <div style={{ minHeight: "100vh", background: CREAM, padding: "clamp(72px,10vw,100px) 20px clamp(40px,6vw,60px)" }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "40px" }}>
           <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.5rem,3vw,2rem)", color: "#1a1a1a" }}>

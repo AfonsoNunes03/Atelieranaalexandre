@@ -733,7 +733,7 @@ export function GaleriaPage() {
                 style={{
                   aspectRatio: "3/4",
                   background: "linear-gradient(145deg, #d4cec4 0%, #e8e4dd 50%, #f2efe9 100%)",
-                  padding: "2.5rem",
+                  padding: "clamp(1rem,4vw,2.5rem)",
                   boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
                 }}
               >

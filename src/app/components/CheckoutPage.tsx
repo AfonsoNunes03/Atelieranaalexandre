@@ -136,7 +136,7 @@ export function CheckoutPage() {
           <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(2rem,4vw,2.8rem)", color: "#1a1a1a", margin: 0 }}>
             Checkout
           </h1>
-          <div style={{ width: 40, h: 2, background: GOLD, margin: '16px auto' }} />
+          <div style={{ width: 40, height: 2, background: GOLD, margin: '16px auto' }} />
         </div>
 
         <div style={{ gap: 40 }} className="flex flex-col lg:flex-row items-start">
@@ -144,7 +144,7 @@ export function CheckoutPage() {
           {/* Coluna Esquerda: Formulário & Pagamento */}
           <div style={{ flex: 1.5, width: '100%' }}>
             
-            <form onSubmit={handleSubmit} style={{ background: "#fff", borderRadius: 12, padding: "32px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: '1px solid rgba(0,0,0,0.03)' }}>
+            <form onSubmit={handleSubmit} style={{ background: "#fff", borderRadius: 12, padding: "clamp(16px,4vw,32px)", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: '1px solid rgba(0,0,0,0.03)' }}>
               
               <section style={{ marginBottom: 40 }}>
                 <h3 style={{ fontSize: "0.65rem", letterSpacing: "0.25em", textTransform: "uppercase", color: GOLD, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -174,7 +174,7 @@ export function CheckoutPage() {
                   Método de Pagamento
                 </h3>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div 
                     onClick={() => setPaymentMethod("card")}
                     style={{ 
@@ -237,8 +237,8 @@ export function CheckoutPage() {
           </div>
 
           {/* Coluna Direita: Resumo Items */}
-          <div style={{ flex: 1, width: '100%', position: 'sticky', top: 120 }}>
-            <div style={{ background: "#fff", borderRadius: 12, padding: "28px", border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+          <div className="lg:sticky" style={{ flex: 1, width: '100%', top: 88 }}>
+            <div style={{ background: "#fff", borderRadius: 12, padding: "clamp(16px,3vw,28px)", border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
               <h4 style={{ fontSize: "0.6rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#bbb", marginBottom: 24 }}>O teu Pedido</h4>
               
               <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 30 }}>
