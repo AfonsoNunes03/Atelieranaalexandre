@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Cookie, ShieldCheck } from "lucide-react";
 
-const GOLD = "#C4956A";
+import { GOLD } from "../../lib/tokens";
 const STORAGE_KEY = "aa_cookie_consent";
 
 type ConsentState = { analytics: boolean; marketing: boolean } | null;

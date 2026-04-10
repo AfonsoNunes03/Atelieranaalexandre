@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const GOLD = "#C9A96E";
+import { GOLD } from "../../lib/tokens";
 const GOLD_DARK = "#B8922A";
 
 interface ArtworkCard {
@@ -148,15 +148,22 @@ export function CurvedCarousel() {
     };
   }, [hovered, next]);
 
-  // Touch/drag support
-  const touchStartX = useRef(0);
+  // Touch/drag support com validação de eixo (scroll natural)
+  const touchStartPos = useRef({ x: 0, y: 0 });
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
+    touchStartPos.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
   };
+  
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const diff = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(diff) > 50) {
-      diff > 0 ? prev() : next();
+    const diffX = e.changedTouches[0].clientX - touchStartPos.current.x;
+    const diffY = e.changedTouches[0].clientY - touchStartPos.current.y;
+    
+    // Se o intent é scroll vertical (Y > X), ignoramos a lógica do carrossel
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      diffX > 0 ? prev() : next();
     }
   };
 
@@ -168,6 +175,7 @@ export function CurvedCarousel() {
       onMouseLeave={() => setHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      style={{ touchAction: "pan-y" }}
     >
       {/* Carousel container */}
       <div
@@ -211,6 +219,8 @@ export function CurvedCarousel() {
                 width: isMobile ? 220 : 300,
                 cursor: isCenter ? "default" : "pointer",
                 transformStyle: "preserve-3d",
+                pointerEvents: Math.abs(offset) <= visibleRange ? "auto" : "none",
+                willChange: "transform",
               }}
             >
               <div
@@ -220,17 +230,17 @@ export function CurvedCarousel() {
                   overflow: "hidden",
                   background: "#fff",
                   boxShadow: isCenter
-                    ? `0 24px 60px rgba(0,0,0,0.18), 0 0 0 1.5px ${hoveredCard === work.id ? GOLD : "transparent"}`
+                    ? isMobile ? `0 14px 40px rgba(0,0,0,0.12), 0 0 0 1px ${GOLD}66` : `0 24px 60px rgba(0,0,0,0.18), 0 0 0 1.5px ${hoveredCard === work.id ? GOLD : "transparent"}`
                     : "0 8px 30px rgba(0,0,0,0.1)",
-                  transition: "box-shadow 0.4s ease",
+                  transition: "box-shadow 0.4s ease, transform 0.4s ease",
                   transform:
-                    isCenter && hoveredCard === work.id
+                    isCenter && hoveredCard === work.id && !isMobile
                       ? "translateY(-6px)"
                       : "translateY(0)",
                 }}
               >
-                {/* Gold glow on active hover */}
-                {isCenter && hoveredCard === work.id && (
+                {/* Gold glow on active hover (disabled on mobile for performance) */}
+                {isCenter && hoveredCard === work.id && !isMobile && (
                   <div
                     style={{
                       position: "absolute",
@@ -239,6 +249,7 @@ export function CurvedCarousel() {
                       background: `linear-gradient(135deg, ${GOLD}44, ${GOLD}22, transparent)`,
                       zIndex: -1,
                       filter: "blur(8px)",
+                      willChange: "opacity",
                     }}
                   />
                 )}

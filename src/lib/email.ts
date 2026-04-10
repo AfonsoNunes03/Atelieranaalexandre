@@ -57,7 +57,7 @@ async function callSendEmail(payload: {
   });
 
   if (!res.ok) {
-    // Email falhou mas não bloqueia o fluxo de compra
-    console.warn("[email] Falha ao enviar email:", await res.text());
+    const errorText = await res.text();
+    if (import.meta.env?.DEV) console.warn("[email] Falha ao enviar email:", errorText);
   }
 }

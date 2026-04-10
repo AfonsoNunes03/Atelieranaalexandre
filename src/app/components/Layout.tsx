@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { subscribeNewsletter } from "../../lib/db";
 import { signOut } from "../../lib/auth";
 import { supabase } from "../../lib/supabase";
@@ -7,6 +7,8 @@ import { Menu, X, ShoppingCart, ChevronDown, Mail, Phone, MapPin, Instagram, Arr
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage, type Lang } from "../i18n";
 import { PWAInstallPrompt } from "./PWAInstallPrompt";
+import { ErrorBoundary } from "./ErrorBoundary";
+import { GOLD, CREAM } from "../../lib/tokens";
 
 const langOptions = [
   { code: "pt" as Lang, flagCdn: "pt", label: "portugues - PT", short: "PT" },
@@ -36,8 +38,6 @@ function FlagImg({ code, size = 22, circular = false }: { code: string; size?: n
   );
 }
 
-const GOLD = "#C9A96E";
-
 // Pinterest SVG Icon Component
 function PinterestIcon({ size = 14 }: { size?: number }) {
   return (
@@ -65,8 +65,6 @@ export function Layout() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [accountHover, setAccountHover] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL ?? "";
-  const isAdmin = !!userEmail && !!adminEmail && userEmail === adminEmail;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -394,18 +392,6 @@ export function Layout() {
                       <p style={{ fontSize: "0.8rem", color: "#1a1a1a", fontWeight: 500 }}>{userName ?? userEmail}</p>
                     </div>
                     <div style={{ padding: "6px 0" }}>
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          onClick={() => setAccountOpen(false)}
-                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "0.84rem", color: "#444", transition: "background 0.15s", fontFamily: "var(--font-sans)", textDecoration: "none" }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "#F8F5F2")}
-                          onMouseLeave={e => (e.currentTarget.style.background = "none")}
-                        >
-                          <LayoutDashboard size={14} strokeWidth={1.5} style={{ color: GOLD, flexShrink: 0 }} />
-                          Painel Admin
-                        </Link>
-                      )}
                       {[
                         { label: "O meu perfil",         Icon: UserCircle },
                         { label: "As minhas encomendas",  Icon: Package },
@@ -719,7 +705,51 @@ export function Layout() {
 
       {/* ══ MAIN CONTENT ══ */}
       <main className="pt-14 md:pt-[70px] relative">
-        <Outlet />
+        <ErrorBoundary>
+          <Suspense fallback={
+            <div style={{
+              height: "calc(100vh - 70px)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "transparent",
+            }}>
+              <div style={{
+                width: "48px",
+                height: "48px",
+                border: "1px solid rgba(199, 161, 107, 0.15)",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative"
+              }}>
+                <div style={{
+                  width: "100%",
+                  height: "100%",
+                  border: "1px solid transparent",
+                  borderTop: "1px solid #C7A16B",
+                  borderRadius: "50%",
+                  position: "absolute",
+                  animation: "loading-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite"
+                }} />
+                <span style={{
+                  fontFamily: "var(--font-serif)",
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.1em",
+                  color: "#C7A16B",
+                  opacity: 0.6
+                }}>AA</span>
+              </div>
+              <style>{`
+                @keyframes loading-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+              `}</style>
+            </div>
+          }>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       <SiteFooter />
@@ -744,7 +774,6 @@ export function Layout() {
 
 // ── Footer ─────────────────────────────────────────────────────
 const IMG_GALLERY = "https://images.unsplash.com/photo-1506286397972-ae8e5d648675?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-const CREAM = "#FAF8F5";
 const GL = "rgba(201,169,110,";
 
 function FLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -895,9 +924,9 @@ function SiteFooter() {
             </p>
             <div style={{ display: "flex", gap: "8px" }}>
               {([
-                { icon: Instagram, label: "Instagram", href: "#" },
-                { icon: Facebook,  label: "Facebook",  href: "#" },
-                { icon: PinterestIcon, label: "Pinterest", href: "#" },
+                { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/margaridajalexandre" },
+                { icon: Facebook,  label: "Facebook",  href: "https://www.facebook.com/profile.php?id=100063675053556" },
+                { icon: PinterestIcon, label: "Pinterest", href: "https://pt.pinterest.com/aanaalexandre/" },
               ] as const).map(({ icon: Icon, label, href }) => (
                 <a key={label} href={href} aria-label={label}
                   className="group"
@@ -967,7 +996,7 @@ function SiteFooter() {
             </div>
             <ul style={{ display: "flex", flexDirection: "column", gap: "13px", listStyle: "none", padding: 0, margin: 0 }}>
               {["Envios", "Devoluções", "Certificados"].map(label => (
-                <li key={label}><FAnchor href="#">{label}</FAnchor></li>
+                <li key={label}><FLink to="/contactos?ref=servicos">{label}</FLink></li>
               ))}
             </ul>
           </div>
@@ -980,7 +1009,7 @@ function SiteFooter() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "24px" }}>
               {[
-                { Icon: MapPin, main: "Rua de Coimbra, 42", sub: "2300-471 Tomar", href: "#" },
+                { Icon: MapPin, main: "Rua de Coimbra, 42", sub: "2300-471 Tomar", href: "https://maps.google.com/?q=Rua+de+Coimbra+42+Tomar" },
                 { Icon: Phone,  main: "+351 967 060 682",   sub: "Chamada nacional", href: "tel:+351967060682" },
                 { Icon: Mail,   main: "atelier.anaalexandre", sub: "@gmail.com",    href: "mailto:atelier.anaalexandre@gmail.com" },
               ].map(({ Icon, main, sub, href }) => (
@@ -1042,11 +1071,11 @@ function SiteFooter() {
             <p style={{ fontSize: "0.5rem", letterSpacing: "0.32em", textTransform: "uppercase", color: `${GL}0.5)` }}>by HARTEG</p>
             <div style={{ display: "flex", gap: "clamp(12px,2.5vw,28px)", flexWrap: "wrap" }}>
               {footerLegal.map(({ label }) => (
-                <a key={label} href="#"
+                <FLink key={label} to="/legal"
                   style={{ fontSize: "0.61rem", color: "rgba(26,26,26,0.3)", textDecoration: "none", letterSpacing: "0.03em", transition: "color 0.22s" }}
                   onMouseOver={e => (e.currentTarget.style.color = GOLD)}
                   onMouseOut={e =>  (e.currentTarget.style.color = "rgba(26,26,26,0.3)")}
-                >{label}</a>
+                >{label}</FLink>
               ))}
             </div>
           </div>

@@ -7,11 +7,14 @@ export function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
+    // Don't show if user already dismissed it in this session or permanently
+    if (localStorage.getItem("pwa-prompt-dismissed")) return;
+
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show prompt after a short delay to not annoy the user immediately
-      const timer = setTimeout(() => setShowPrompt(true), 15000);
+      // Show prompt after 30 seconds to not annoy the user immediately
+      const timer = setTimeout(() => setShowPrompt(true), 30000);
       return () => clearTimeout(timer);
     };
 
@@ -20,6 +23,12 @@ export function PWAInstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
+  const handleDismiss = () => {
+    setShowPrompt(false);
+    // Remember dismissal for 24 hours (approx) or just the session
+    localStorage.setItem("pwa-prompt-dismissed", "true");
+  };
+
   const handleInstall = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
@@ -27,6 +36,7 @@ export function PWAInstallPrompt() {
     if (outcome === "accepted") {
       setDeferredPrompt(null);
       setShowPrompt(false);
+      localStorage.setItem("pwa-prompt-dismissed", "true");
     }
   };
 
@@ -70,7 +80,7 @@ export function PWAInstallPrompt() {
 
           <div style={{ display: "flex", gap: "8px" }}>
             <button
-              onClick={() => setShowPrompt(false)}
+              onClick={handleDismiss}
               style={{ background: "transparent", border: "none", color: "#BBB", cursor: "pointer", padding: "8px" }}
             >
               <X size={18} />

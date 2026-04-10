@@ -2,7 +2,7 @@ import { useToasts, toast } from "../../lib/toast";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle2, AlertCircle, Info, XCircle, X } from "lucide-react";
 
-const GOLD = "#C9A96E";
+import { GOLD } from "../../lib/tokens";
 
 export function ToastContainer() {
   const toasts = useToasts();

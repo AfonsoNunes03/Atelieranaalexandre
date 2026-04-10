@@ -1,32 +1,42 @@
 import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { Layout } from "./components/Layout";
-import { HomePage } from "./components/HomePage";
-import { GaleriaPage } from "./components/GaleriaPage";
-import { ObraPage } from "./components/ObraPage";
-import { SobrePage } from "./components/SobrePage";
-import { MentoriaPage } from "./components/MentoriaPage";
-import { ContactosPage } from "./components/ContactosPage";
-import { PremioPage } from "./components/PremioPage";
-import { LoginPage } from "./components/LoginPage";
 import { AdminProtected } from "./components/AdminProtected";
-import { RegisterPage } from "./components/RegisterPage";
-import { TermosPage } from "./components/TermosPage";
-import { PrivacidadePage } from "./components/PrivacidadePage";
-import { ReclamacoesPage } from "./components/ReclamacoesPage";
-import { SucessoPage } from "./components/SucessoPage";
-import { RecoverPasswordPage } from "./components/RecoverPasswordPage";
-import { ResetPasswordPage } from "./components/ResetPasswordPage";
-import { CarrinhoPage } from "./components/CarrinhoPage";
-import { CheckoutPage } from "./components/CheckoutPage";
 import { RequireAuth } from "./components/RequireAuth";
-import { NotFoundPage } from "./components/NotFoundPage";
+
+// ── Fallback Global UI ─────────────────────────────
+const FullScreenLoader = () => (
+  <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A96E", fontSize: "0.85rem", letterSpacing: "0.1em" }}>
+    A carregar...
+  </div>
+);
+
+// ── Lazy Loads (Code Splitting) ────────────────────
+const HomePage = lazy(() => import("../pages/HomePage").then(m => ({ default: m.HomePage })));
+const GaleriaPage = lazy(() => import("../pages/GaleriaPage").then(m => ({ default: m.GaleriaPage })));
+const ObraPage = lazy(() => import("../pages/ObraPage").then(m => ({ default: m.ObraPage })));
+const SobrePage = lazy(() => import("../pages/SobrePage").then(m => ({ default: m.SobrePage })));
+const MentoriaPage = lazy(() => import("../pages/MentoriaPage").then(m => ({ default: m.MentoriaPage })));
+const ContactosPage = lazy(() => import("../pages/ContactosPage").then(m => ({ default: m.ContactosPage })));
+const PremioPage = lazy(() => import("../pages/PremioPage").then(m => ({ default: m.PremioPage })));
+const LoginPage = lazy(() => import("../pages/LoginPage").then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import("../pages/RegisterPage").then(m => ({ default: m.RegisterPage })));
+const TermosPage = lazy(() => import("../pages/TermosPage").then(m => ({ default: m.TermosPage })));
+const PrivacidadePage = lazy(() => import("../pages/PrivacidadePage").then(m => ({ default: m.PrivacidadePage })));
+const ReclamacoesPage = lazy(() => import("../pages/ReclamacoesPage").then(m => ({ default: m.ReclamacoesPage })));
+const SucessoPage = lazy(() => import("../pages/SucessoPage").then(m => ({ default: m.SucessoPage })));
+const RecoverPasswordPage = lazy(() => import("../pages/RecoverPasswordPage").then(m => ({ default: m.RecoverPasswordPage })));
+const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })));
+const CarrinhoPage = lazy(() => import("../pages/CarrinhoPage").then(m => ({ default: m.CarrinhoPage })));
+const CheckoutPage = lazy(() => import("../pages/CheckoutPage").then(m => ({ default: m.CheckoutPage })));
+const NotFoundPage = lazy(() => import("../pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
 export const router = createBrowserRouter([
-  { path: "/login", Component: LoginPage },
-  { path: "/register", Component: RegisterPage },
+  { path: "/login", element: <Suspense fallback={<FullScreenLoader />}><LoginPage /></Suspense> },
+  { path: "/register", element: <Suspense fallback={<FullScreenLoader />}><RegisterPage /></Suspense> },
   { path: "/admin", Component: AdminProtected },
-  { path: "/recuperar-password", Component: RecoverPasswordPage },
-  { path: "/reset-password", Component: ResetPasswordPage },
+  { path: "/recuperar-password", element: <Suspense fallback={<FullScreenLoader />}><RecoverPasswordPage /></Suspense> },
+  { path: "/reset-password", element: <Suspense fallback={<FullScreenLoader />}><ResetPasswordPage /></Suspense> },
   {
     path: "/",
     Component: Layout,

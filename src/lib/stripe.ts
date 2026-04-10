@@ -13,25 +13,22 @@ export const getStripe = () => {
   return stripePromise;
 };
 
-export interface CheckoutItem {
-  id: string;
-  titulo: string;
-  preco: number;
-  imagem_url?: string;
-}
-
 /**
  * Chama a Supabase Edge Function `create-checkout-session`,
  * obtém o URL de pagamento do Stripe e redireciona o utilizador.
  *
  * Requer:
  *   VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env.local
- *   STRIPE_SECRET_KEY configurado nos Supabase secrets
+ *   STRIPE_SECRET_KEY e SUPABASE_SERVICE_ROLE_KEY configurados nos Supabase secrets
  */
 export async function createStripeCheckoutSession(
-  items: CheckoutItem[],
-  customerEmail: string,
-  vendaId: string | null
+  itemIds: string[],
+  customerInfo: {
+    email: string;
+    nome: string;
+    telefone?: string;
+    morada?: string;
+  }
 ): Promise<void> {
   const edgeFnUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
@@ -41,7 +38,13 @@ export async function createStripeCheckoutSession(
       "Content-Type": "application/json",
       Authorization: `Bearer ${supabaseAnonKey}`,
     },
-    body: JSON.stringify({ items, customerEmail, vendaId }),
+    body: JSON.stringify({ 
+      items: itemIds, 
+      customerEmail: customerInfo.email,
+      customerName: customerInfo.nome,
+      customerTelefone: customerInfo.telefone,
+      customerMorada: customerInfo.morada 
+    }),
   });
 
   if (!res.ok) {

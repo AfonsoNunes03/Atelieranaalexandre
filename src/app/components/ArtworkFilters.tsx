@@ -6,7 +6,7 @@ import * as Switch from "@radix-ui/react-switch";
 import * as Slider from "@radix-ui/react-slider";
 import * as Select from "@radix-ui/react-select";
 
-const GOLD = "#C9A96E";
+import { GOLD } from "../../lib/tokens";
 
 export interface FilterState {
   techniques: string[];

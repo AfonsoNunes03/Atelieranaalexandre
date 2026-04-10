@@ -1,13 +1,13 @@
 import { lazy, Suspense } from "react";
 import { ProtectedRoute } from "./ProtectedRoute";
 
-const AdminDashboard = lazy(() =>
-  import("./AdminDashboard").then((m) => ({ default: m.AdminDashboard }))
+const AdminLayout = lazy(() =>
+  import("../../features/admin/AdminLayout").then((m) => ({ default: m.AdminLayout }))
 );
 
 export function AdminProtected() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requireAdmin={true}>
       <Suspense
         fallback={
           <div
@@ -22,11 +22,11 @@ export function AdminProtected() {
               letterSpacing: "0.1em",
             }}
           >
-            A carregar...
+            A carregar Painel Administrativo...
           </div>
         }
       >
-        <AdminDashboard />
+        <AdminLayout />
       </Suspense>
     </ProtectedRoute>
   );

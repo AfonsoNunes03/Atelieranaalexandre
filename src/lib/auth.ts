@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 
 export async function signIn(email: string, password: string) {
@@ -36,4 +38,17 @@ export function onAuthStateChange(callback: (session: boolean) => void) {
   return supabase.auth.onAuthStateChange((_event, session) => {
     callback(!!session);
   });
+}
+
+/** Returns the current session. `undefined` while loading, `null` when unauthenticated. */
+export function useSession(): Session | null | undefined {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return session;
 }

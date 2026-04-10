@@ -1,42 +1,33 @@
-import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
+import { useSession } from "../../lib/auth";
+import { LoadingSpinner } from "./LoadingSpinner";
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "";
-const GOLD = "#C4956A";
+export function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
+  const session = useSession();
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<"loading" | "admin" | "forbidden" | "unauth">("loading");
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const email = data.session?.user?.email;
-      if (!email) setStatus("unauth");
-      else if (email === ADMIN_EMAIL) setStatus("admin");
-      else setStatus("forbidden");
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const email = session?.user?.email;
-      if (!email) setStatus("unauth");
-      else if (email === ADMIN_EMAIL) setStatus("admin");
-      else setStatus("forbidden");
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (status === "loading") {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FAF8F5" }}>
-        <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${GOLD}30`, borderTopColor: GOLD, animation: "spin 0.8s linear infinite" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+  // 1. Loading state
+  if (session === undefined) return <LoadingSpinner />;
+  
+  // 2. No session -> Redirect to Login
+  if (!session) {
+    if (import.meta.env.DEV) console.log("[Auth] Nenhuma sessão encontrada. Redirecionando para /login.");
+    return <Navigate to="/login?redirect=/admin" replace />;
   }
 
-  if (status === "unauth") return <Navigate to="/login" replace />;
-  if (status === "forbidden") return <Navigate to="/" replace />;
+  // 3. Admin Check (if requested)
+  if (requireAdmin) {
+    // Check in app_metadata (from Supabase claims/roles)
+    const isAdmin = session.user?.app_metadata?.role === 'admin' || 
+                   session.user?.user_metadata?.role === 'admin';
+    
+    if (!isAdmin) {
+      if (import.meta.env.DEV) {
+        console.warn("[Auth] Acesso Admin Bloqueado:", session.user.email, "não possui roles administrativas.");
+        console.info("[Auth] Dica: Certifique-se que o utilizador tem 'role: admin' no Supabase App Metadata.");
+      }
+      return <Navigate to="/" replace />;
+    }
+  }
 
   return <>{children}</>;
 }

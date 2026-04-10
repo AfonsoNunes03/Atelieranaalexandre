@@ -29,7 +29,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(CART_STORAGE_KEY);
       return saved ? JSON.parse(saved) : [];
     } catch (error) {
-      console.error("Error loading cart from storage:", error);
+      if (import.meta.env?.DEV) console.error("Error loading cart from storage:", error);
       return [];
     }
   });

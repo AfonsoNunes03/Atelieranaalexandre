@@ -1,4 +1,21 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/figma/src/app/components/*.tsx)",
+      "Bash(ls -la /c/figma/.env*)",
+      "Bash(find /c/figma/src -name \"*.tsx\" -exec grep -l \"getObras\\\\|createObra\\\\|updateObra\\\\|deleteObra\" {} \\\\;)",
+      "Bash(grep -rn \"figma:asset\" /c/figma/src/app/components/*.tsx)",
+      "Bash(grep -rn \"enviarContacto\\\\|subscribeNewsletter\\\\|getConfig\" /c/figma/src/app/components/*.tsx)",
+      "Bash(grep -E \"\\\\.ts$|\\\\.tsx$\")",
+      "Bash(grep -rn \"localStorage\\\\|sessionStorage\" /c/figma/src/app/components/*.tsx)",
+      "Bash(find /c/figma/supabase -name \"*.sql\" -exec wc -l {} \\\\;)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -rn \"supabase.from\\\\|createClient\" /c/figma/src/app/components/admin/sections/*.tsx)",
+      "Bash(ls -lh /c/figma/dist/assets/*.js)",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_2805d4bf9945f253fea883a2dc771e1bb82ba93a npx supabase functions deploy --all --project-ref vqunmqtozykwqtmyfjyi)"
+    ]
+  },
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true
   }

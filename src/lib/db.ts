@@ -1,8 +1,10 @@
+/// <reference types="vite/client" />
 import { supabase } from "./supabase";
 import type { Database } from "./database.types";
 
 type Obra = Database["public"]["Tables"]["obras"]["Row"];
 type ObraInsert = Database["public"]["Tables"]["obras"]["Insert"];
+type ObraUpdate = Database["public"]["Tables"]["obras"]["Update"];
 type ContactoInsert = Database["public"]["Tables"]["contactos"]["Insert"];
 type Contacto = Database["public"]["Tables"]["contactos"]["Row"];
 type NewsletterRow = Database["public"]["Tables"]["newsletter"]["Row"];
@@ -18,12 +20,12 @@ export async function getObras(): Promise<Obra[]> {
       .select("*")
       .order("ordem", { ascending: true });
     if (error) {
-      console.warn("Supabase error (using fallback):", error.message);
+      if (import.meta.env?.DEV) console.warn("Supabase getObras error:", error.message);
       return [];
     }
     return (data as Obra[]) ?? [];
   } catch (e) {
-    console.warn("Supabase connection error (using fallback):", e);
+    if (import.meta.env?.DEV) console.warn("Supabase getObras connection error:", e);
     return [];
   }
 }
@@ -57,12 +59,12 @@ export async function getObrasDestaque(): Promise<Obra[]> {
       .order("ordem", { ascending: true })
       .limit(6);
     if (error) {
-      console.warn("Supabase error (using fallback):", error.message);
+      if (import.meta.env?.DEV) console.warn("Supabase getObrasDestaque error:", error.message);
       return [];
     }
     return (data as Obra[]) ?? [];
   } catch (e) {
-    console.warn("Supabase connection error (using fallback):", e);
+    if (import.meta.env?.DEV) console.warn("Supabase getObrasDestaque connection error:", e);
     return [];
   }
 }
@@ -70,8 +72,7 @@ export async function getObrasDestaque(): Promise<Obra[]> {
 // ── Contactos ─────────────────────────────────────────────────────────────────
 
 export async function enviarContacto(contacto: ContactoInsert): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("contactos") as any).insert(contacto);
+  const { error } = await supabase.from("contactos").insert(contacto);
   if (error) throw error;
 }
 
@@ -88,15 +89,13 @@ export async function subscribeNewsletter(email: string): Promise<"ok" | "alread
 
   if (row) {
     if (!row.ativo) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("newsletter") as any).update({ ativo: true }).eq("email", email);
+      await supabase.from("newsletter").update({ ativo: true }).eq("email", email);
       return "ok";
     }
     return "already_subscribed";
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("newsletter") as any).insert({ email });
+  const { error } = await supabase.from("newsletter").insert({ email });
   if (error) throw error;
   return "ok";
 }
@@ -116,21 +115,19 @@ export async function getConfig(chave: string): Promise<string | null> {
 // ── Admin: Obras CRUD ──────────────────────────────────────────────────────────
 
 export async function createObra(obra: ObraInsert): Promise<Obra> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("obras") as any)
+  const { data, error } = await supabase.from("obras")
     .insert(obra)
     .select()
     .single();
   if (error) {
-    console.error("[createObra] Erro ao inserir obra:", error.message, error.details, error.hint);
-    throw error;
+      if (import.meta.env?.DEV) console.error("[createObra] Erro ao inserir obra:", error);
+      throw error;
   }
   return data as Obra;
 }
 
-export async function updateObra(id: string, updates: Partial<ObraInsert>): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("obras") as any).update(updates).eq("id", id);
+export async function updateObra(id: string, updates: ObraUpdate): Promise<void> {
+  const { error } = await supabase.from("obras").update(updates).eq("id", id);
   if (error) throw error;
 }
 
@@ -151,8 +148,7 @@ export async function getContactosAdmin(): Promise<Contacto[]> {
 }
 
 export async function marcarContactoLido(id: string): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("contactos") as any).update({ lido: true }).eq("id", id);
+  const { error } = await supabase.from("contactos").update({ lido: true }).eq("id", id);
   if (error) throw error;
 }
 
@@ -173,27 +169,25 @@ export async function getNewsletterAdmin(): Promise<NewsletterRow[]> {
 }
 
 export async function toggleNewsletterStatus(id: string, ativo: boolean): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("newsletter") as any).update({ ativo }).eq("id", id);
+  const { error } = await supabase.from("newsletter").update({ ativo }).eq("id", id);
   if (error) throw error;
 }
 
 export async function createVenda(venda: VendaInsert): Promise<string | null> {
-  const { data, error } = await (supabase.from("vendas") as any)
+  const { data, error } = await supabase.from("vendas")
     .insert(venda)
     .select()
     .single();
     
   if (error) {
-    console.error("[createVenda] Erro detalhado:", error.message, error.details, error.hint);
+    if (import.meta.env?.DEV) console.error("[createVenda] Erro detalhado:", error);
     throw error;
   }
   return data?.id || null;
 }
 
 export async function updateObraStatus(id: string, estado: "disponivel" | "reservado" | "vendido"): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("obras") as any).update({ estado }).eq("id", id);
+  const { error } = await supabase.from("obras").update({ estado }).eq("id", id);
   if (error) throw error;
 }
 
@@ -206,8 +200,7 @@ export async function getConfigAll(): Promise<ConfigRow[]> {
 }
 
 export async function updateConfigAdmin(chave: string, valor: string): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("config_site") as any)
+  const { error } = await supabase.from("config_site")
     .upsert({ chave, valor }, { onConflict: "chave" });
   if (error) throw error;
 }
@@ -261,7 +254,7 @@ export async function getStatsAdmin(): Promise<{
 // ── Storage: Upload de Imagens ─────────────────────────────────────────────────
 
 export async function uploadObraImage(file: File): Promise<string> {
-  const fileExt = file.name.split(".").pop();
+  const fileExt = file.name.includes(".") ? file.name.split(".").pop()! : "jpg";
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
   // Upload direto para a raiz do bucket 'obras' (sem sub-pasta aninhada)
@@ -289,10 +282,12 @@ export async function deleteObraImage(imageUrl: string): Promise<void> {
     .from("obras")
     .remove([filePath]);
 
-  if (error) console.error("Erro ao eliminar imagem:", error);
+  if (error) {
+    if (import.meta.env?.DEV) console.error("Erro ao eliminar imagem:", error);
+  }
 }
 export async function uploadSiteImage(file: File, chave: string): Promise<string> {
-  const fileExt = file.name.split(".").pop();
+  const fileExt = file.name.includes(".") ? file.name.split(".").pop()! : "jpg";
   const fileName = `${chave}-${Date.now()}.${fileExt}`;
 
   // Tentamos enviar para o bucket 'obras' já que já existe, mas numa pasta 'site/'
